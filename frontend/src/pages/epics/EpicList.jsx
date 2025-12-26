@@ -1,9 +1,10 @@
 import { useSelector, useDispatch } from 'react-redux';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageWrapper from '../../components/layout/PageWrapper';
 import { fetchEpics, setCurrentEpic } from '../../store/epicSlice';
 import { FiTarget, FiCalendar, FiTrendingUp } from 'react-icons/fi';
+import CreateEpicModal from '../../components/common/CreateEpicModal';
 
 const statusColors = {
     planned: 'bg-gray-100 text-gray-800',
@@ -20,8 +21,10 @@ const epicColorClasses = {
 
 export default function EpicList() {
     const dispatch = useDispatch();
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const { epics, loading } = useSelector((state) => state.epic);
     const { currentCommunity } = useSelector((state) => state.community);
+    
 
     useEffect(() => {
         if (currentCommunity?.id) {
@@ -52,7 +55,10 @@ export default function EpicList() {
                         High-level goals containing multiple sprints
                     </p>
                 </div>
-                <button className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-medium shadow-md">
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-medium shadow-md"
+                >
                     + Create Epic
                 </button>
             </div>
@@ -125,7 +131,9 @@ export default function EpicList() {
                         </Link>
                     ))}
                 </div>
+                
             )}
+            <CreateEpicModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
         </PageWrapper>
     );
 }

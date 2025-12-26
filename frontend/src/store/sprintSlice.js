@@ -1,90 +1,102 @@
 // src/store/sprintSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-export const fetchSprints = createAsyncThunk(
-    'sprint/fetchSprints',
-    async ({ communityId }, { rejectWithValue }) => {
-        try {
-            await new Promise(resolve => setTimeout(resolve, 700));
-
-            return mockSprints.filter(s => s.communityId === communityId || communityId === 'all');
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
-    }
-);
-
+// Mock sprints (your existing data)
 const mockSprints = [
-    {
-        id: 'sprint-1',
-        name: 'December 2025 Monthly Sprint',
-        goal: 'Complete AI Task Assistant MVP and fix critical bugs',
-        startDate: '2025-12-01',
-        endDate: '2025-12-31',
-        type: 'monthly',
-        communityId: 'branch-1',
-        velocity: 48,
-        completedPoints: 32,
-        totalPoints: 60,
-        progress: 53,
-        status: 'active',
-        retrospective: 'Good velocity, but need better backlog grooming.',
-        weeklySprints: [
-            { id: 'week-1', name: 'Week 1 (Dec 1-7)', progress: 80 },
-            { id: 'week-2', name: 'Week 2 (Dec 8-14)', progress: 65 },
-            { id: 'week-3', name: 'Week 3 (Dec 15-21)', progress: 45 },
-            { id: 'week-4', name: 'Week 4 (Dec 22-31)', progress: 30 },
-        ],
-    },
-    {
-        id: 'sprint-2',
-        name: 'Q4 2025 Product Launch Sprint',
-        goal: 'Prepare for enterprise client demo and documentation',
-        startDate: '2025-10-01',
-        endDate: '2025-12-31',
-        type: 'quarterly',
-        communityId: 'branch-2',
-        velocity: 72,
-        completedPoints: 72,
-        totalPoints: 80,
-        progress: 90,
-        status: 'completed',
-        retrospective: 'On track. Excellent team coordination.',
-        weeklySprints: [],
-    },
+  // ... your mock data ...
 ];
 
+export const fetchSprints = createAsyncThunk(
+  'sprint/fetchSprints',
+  async ({ communityId }, { rejectWithValue }) => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 700));
+      return mockSprints.filter(s => s.communityId === communityId || communityId === 'all');
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const createSprint = createAsyncThunk(
+  'sprint/createSprint',
+  async (sprintData, { rejectWithValue }) => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const newSprint = {
+        ...sprintData,
+        id: Date.now().toString(),
+        progress: 0,
+        velocity: 0,
+        status: 'planned',
+      };
+      return newSprint;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+// ADD THIS: Update Sprint Thunk
+export const updateSprint = createAsyncThunk(
+  'sprint/updateSprint',
+  async ({ id, updates }, { rejectWithValue }) => {
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      return { id, updates };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const initialState = {
-    sprints: [],
-    currentSprint: null,
-    loading: false,
-    error: null,
+  sprints: [],
+  currentSprint: null,
+  loading: false,
+  error: null,
 };
 
 const sprintSlice = createSlice({
-    name: 'sprint',
-    initialState,
-    reducers: {
-        setCurrentSprint: (state, action) => {
-            state.currentSprint = action.payload;
-        },
+  name: 'sprint',
+  initialState,
+  reducers: {
+    setCurrentSprint: (state, action) => {
+      state.currentSprint = action.payload;
     },
-    extraReducers: (builder) => {
-        builder
-            .addCase(fetchSprints.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(fetchSprints.fulfilled, (state, action) => {
-                state.loading = false;
-                state.sprints = action.payload;
-                state.currentSprint = action.payload.find(s => s.status === 'active') || action.payload[0];
-            })
-            .addCase(fetchSprints.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload;
-            });
-    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchSprints.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchSprints.fulfilled, (state, action) => {
+        state.loading = false;
+        state.sprints = action.payload;
+        if (!state.currentSprint) {
+          state.currentSprint = action.payload.find(s => s.status === 'active') || action.payload[0];
+        }
+      })
+      .addCase(fetchSprints.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(createSprint.fulfilled, (state, action) => {
+        state.sprints.unshift(action.payload);
+      })
+      // ADD THIS: Handle updateSprint
+      .addCase(updateSprint.fulfilled, (state, action) => {
+        const { id, updates } = action.payload;
+        const index = state.sprints.findIndex(s => s.id === id);
+        if (index !== -1) {
+          state.sprints[index] = { ...state.sprints[index], ...updates };
+        }
+        if (state.currentSprint?.id === id) {
+          state.currentSprint = { ...state.currentSprint, ...updates };
+        }
+      });
+  },
 });
 
 export const { setCurrentSprint } = sprintSlice.actions;

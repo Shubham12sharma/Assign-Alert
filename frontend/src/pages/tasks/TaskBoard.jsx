@@ -13,11 +13,13 @@ import {
 import {
     SortableContext,
     verticalListSortingStrategy,
+    sortableKeyboardCoordinates, // ← FIXED: Now imported
+    useSortable,
 } from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { fetchTasks, updateTaskStatus } from '../../store/taskSlice';
 import { FiUser } from 'react-icons/fi';
+import TaskModal from '../../components/common/TaskModal';
 
 const columns = [
     { id: 'backlog', title: 'Backlog' },
@@ -48,7 +50,7 @@ const tagColors = [
 
 function TaskCard({ task, isDragging }) {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id });
-
+    
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
@@ -60,7 +62,7 @@ function TaskCard({ task, isDragging }) {
         Medium: 'bg-yellow-100 text-yellow-800',
         Low: 'bg-green-100 text-green-800',
     };
-
+    
     return (
         <div
             ref={setNodeRef}
@@ -116,6 +118,7 @@ export default function TaskBoard() {
     const dispatch = useDispatch();
     const { tasks, loading } = useSelector((state) => state.task);
     const { currentCommunity } = useSelector((state) => state.community);
+    const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
     const [activeId, setActiveId] = useState(null);
 
     const sensors = useSensors(
@@ -160,7 +163,10 @@ export default function TaskBoard() {
         <PageWrapper>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Task Kanban Board</h1>
-                <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                <button
+                    onClick={() => setIsTaskModalOpen(true)}
+                    className="bg-indigo-600 text-white px-6 py-4 rounded-xl hover:bg-indigo-700 font-semibold shadow-lg flex items-center gap-3"
+                >
                     + Create Task
                 </button>
             </div>
@@ -196,11 +202,15 @@ export default function TaskBoard() {
                         </div>
                     ))}
                 </div>
-
+                
                 <DragOverlay>
                     {activeTask ? <TaskCard task={activeTask} isDragging /> : null}
                 </DragOverlay>
             </DndContext>
+            <TaskModal
+                isOpen={isTaskModalOpen}
+                onClose={() => setIsTaskModalOpen(false)}
+            />
         </PageWrapper>
     );
 }

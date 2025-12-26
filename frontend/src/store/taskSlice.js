@@ -20,19 +20,31 @@ export const fetchTasks = createAsyncThunk(
     }
 );
 
+// src/store/taskSlice.js
+
 export const createTask = createAsyncThunk(
     'task/createTask',
-    async (taskData, { rejectWithValue }) => {
+    async (taskData, { rejectWithValue }) => {  // ← Correct parameter name: taskData
         try {
-            // TODO: POST to Django backend
-            await new Promise(resolve => setTimeout(resolve, 400));
+            await new Promise(resolve => setTimeout(resolve, 500)); // simulate API
+
             const newTask = {
-                ...taskData,
+                ...taskData,                    // ← Use taskData here
                 id: Date.now().toString(),
-                createdAt: new Date().toISOString(),
+                status: 'todo',
+                progress: 0,
                 comments: [],
-                activityLogs: [{ action: 'created task', user: 'Current User', timestamp: new Date().toISOString() }],
+                attachments: [],
+                activityLogs: [
+                    {
+                        action: 'created task',
+                        user: 'Current User',
+                        timestamp: new Date().toISOString(),
+                    },
+                ],
+                createdAt: new Date().toISOString(),
             };
+
             return newTask;
         } catch (error) {
             return rejectWithValue(error.message);
@@ -72,6 +84,7 @@ const mockTasks = [
         attachments: [],
         activityLogs: [],
         createdAt: '2025-12-20',
+        
     },
     {
         id: '2',
@@ -90,6 +103,7 @@ const mockTasks = [
         attachments: [],
         activityLogs: [],
         createdAt: '2025-12-22',
+     
     },
     {
         id: '3',
@@ -108,6 +122,7 @@ const mockTasks = [
         attachments: ['mockup-v1.png'],
         activityLogs: [],
         createdAt: '2025-12-18',
+       
     },
     {
         id: '4',
@@ -126,6 +141,7 @@ const mockTasks = [
         attachments: [],
         activityLogs: [],
         createdAt: '2025-12-10',
+       
     },
     {
         id: '5',
@@ -144,6 +160,7 @@ const mockTasks = [
         attachments: [],
         activityLogs: [],
         createdAt: '2025-12-15',
+       
     },
 ];
 

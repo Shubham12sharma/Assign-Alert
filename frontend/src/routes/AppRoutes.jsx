@@ -4,10 +4,12 @@ import Signup from "../pages/auth/Signup";
 import Dashboard from "../pages/dashboard/Dashboard";
 import CommunityList from "../pages/community/CommunityList";
 import TaskBoard from "../pages/tasks/TaskBoard";
+import SprintDashboard from "../pages/sprints/SprintDashboard";
 import EpicList from "../pages/epics/EpicList";
+import EpicDetails from "../pages/epics/EpicDetails";
+import SprintDetails from "../pages/sprints/SprintDetails";
 import AIInsights from "../pages/ai/AIInsights";
 import ProtectedRoute from "./ProtectedRoute";
-import SprintDashboard from "../pages/sprints/SprintDashboard";
 
 export default function AppRoutes() {
     return (
@@ -17,7 +19,7 @@ export default function AppRoutes() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
 
-                {/* Protected Routes */}
+                {/* Protected Static Routes – MUST come BEFORE dynamic routes */}
                 <Route
                     path="/dashboard"
                     element={
@@ -71,10 +73,29 @@ export default function AppRoutes() {
                         </ProtectedRoute>
                     }
                 />
-                {/* <Route path="/epics/:epicId" element={<EpicDetails />} /> */}
+
+                {/* Dynamic Routes – MUST come AFTER static ones */}
+                <Route
+                    path="/epics/:epicId"
+                    element={
+                        <ProtectedRoute>
+                            <EpicDetails />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/sprints/:sprintId"
+                    element={
+                        <ProtectedRoute>
+                            <SprintDetails />
+                        </ProtectedRoute>
+                    }
+                />
 
                 {/* Default Route */}
                 <Route path="*" element={<Navigate to="/login" replace />} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>
         </BrowserRouter>
     );
