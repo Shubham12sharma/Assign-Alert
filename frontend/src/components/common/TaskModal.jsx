@@ -15,7 +15,7 @@ const mockUsers = [
     { id: '4', name: 'Bob Wilson' },
 ];
 
-export default function TaskModal({ isOpen, onClose }) {
+export default function TaskModal({ isOpen, onClose, mode = 'create', initialData = null }) {
     const dispatch = useDispatch();
     const { epics = [] } = useSelector((state) => state.epic || {});
     const { sprints = [] } = useSelector((state) => state.sprint || {});
@@ -70,7 +70,7 @@ export default function TaskModal({ isOpen, onClose }) {
             setNewTag('');
         }
     };
-
+    
     const handleRemoveTag = (tagToRemove) => {
         setForm({ ...form, tags: form.tags.filter((t) => t !== tagToRemove) });
     };

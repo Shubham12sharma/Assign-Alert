@@ -5,6 +5,7 @@ import communityReducer from './communitySlice';
 import taskReducer from './taskSlice';
 import sprintReducer from './sprintSlice'; 
 import epicReducer from './epicSlice'; 
+import notificationReducer from './notificationSlice';
 
 export const store = configureStore({
     reducer: {
@@ -13,5 +14,6 @@ export const store = configureStore({
         task: taskReducer,
         sprint: sprintReducer,
         epic: epicReducer,
+        notification: notificationReducer,
     },
 });

@@ -1,6 +1,7 @@
 import { useSelector } from 'react-redux';
 import { FiSearch, FiBell, FiUser, FiPlus } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
+import NotificationBell from './NotificationBell';
 
 export default function Topbar() {
     const { user } = useSelector((state) => state.auth);
@@ -22,7 +23,7 @@ export default function Topbar() {
                 <button className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
                     <FiPlus className="mr-2" /> Create Task
                 </button>
-                <FiBell className="text-gray-600 cursor-pointer" /> {/* Notifications */}
+                <NotificationBell /> {/* Notifications */}
                 <div className="flex items-center space-x-2">
                     <FiUser className="text-gray-600" />
                     <span className="text-gray-700">{user.name}</span>
