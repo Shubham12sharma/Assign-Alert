@@ -1,33 +1,63 @@
-import { useSelector } from 'react-redux';
-import { FiSearch, FiBell, FiUser, FiPlus } from 'react-icons/fi';
-import { Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { FiSearch, FiBell } from 'react-icons/fi';
 import NotificationBell from './NotificationBell';
+import { setPersonalMode, setCorporateMode } from '../../store/authSlice';
 
 export default function Topbar() {
-    const { user } = useSelector((state) => state.auth);
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const { user, mode } = useSelector(state => state.auth);
+
+    const toggleMode = () => {
+        if (mode === 'personal') {
+            dispatch(setCorporateMode());
+            navigate('/dashboard');
+        } else {
+            dispatch(setPersonalMode());
+            navigate('/dashboard/personal');
+        }
+    };
 
     return (
-        <div className="fixed top-0 left-64 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
-            <div className="flex items-center w-1/3">
-                <div className="relative w-full">
-                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        <div className="fixed top-0 left-64 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 z-50 shadow-sm">
+            {/* Left: Search Bar */}
+            <div className="flex items-center w-96">
+                <div className="relative w-full max-w-md">
+                    <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg" />
                     <input
                         type="text"
-                        placeholder="Search tasks, sprints, or members..."
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-transparent"
+                        placeholder="Search tasks, sprints, people, epics..."
+                        className="w-full pl-12 pr-6 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                     />
                 </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-                <button className="flex items-center bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
-                    <FiPlus className="mr-2" /> Create Task
+            {/* Right: Mode Toggle + Notifications + User */}
+            <div className="flex items-center gap-6">
+                {/* Mode Toggle */}
+                <button
+                    onClick={toggleMode}
+                    className={`px-3 py-2 rounded-xl font-semibold transition shadow-sm ${mode === 'personal'
+                            ? 'bg-purple-100 text-purple-700 border border-purple-300'
+                            : 'bg-indigo-100 text-indigo-700 border border-indigo-300'
+                        }`}
+                >
+                    {mode === 'personal' ? 'Personal Mode' : 'Corporate Mode'}
                 </button>
-                <NotificationBell /> {/* Notifications */}
-                <div className="flex items-center space-x-2">
-                    <FiUser className="text-gray-600" />
-                    <span className="text-gray-700">{user.name}</span>
-                    <span className="text-xs text-gray-500">({user.role})</span>
+
+                {/* Notifications */}
+                <NotificationBell />
+
+                {/* User Profile */}
+                <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+                        {user?.name?.[0]?.toUpperCase() || 'U'}
+                    </div>
+                    <div>
+                        <p className="font-semibold text-gray-900">{user?.name || 'User'}</p>
+                        <p className="text-sm text-gray-500 capitalize">{user?.role || 'Member'}</p>
+                    </div>
                 </div>
             </div>
         </div>

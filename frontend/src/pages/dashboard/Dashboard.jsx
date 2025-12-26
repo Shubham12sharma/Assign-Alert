@@ -1,9 +1,27 @@
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
+import { fetchTasks } from '../../store/taskSlice';
 import PageWrapper from '../../components/layout/PageWrapper';
 
 export default function Dashboard() {
     const { user } = useSelector((state) => state.auth);
+
+    const { mode } = useSelector(state => state.auth);
+
+    const dispatch = useDispatch();
+    // Fetch tasks depending on mode
+    useEffect(() => {
+        if (mode === 'personal') {
+            dispatch(fetchTasks({ communityId: 'all' }));
+        } else {
+            // corporate/community mode
+            // currentCommunity handled by other components; no-op here
+        }
+    }, [dispatch, mode]);
+    if (mode === 'personal') {
+        return <Navigate to="/dashboard/personal" />;
+    }
 
     if (user.role === 'Super Admin' || user.role === 'Admin') {
         return <Navigate to="/admin/dashboard" />;

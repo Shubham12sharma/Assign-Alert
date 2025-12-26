@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createTask } from '../../store/taskSlice';
+import { addNotification } from '../../store/notificationSlice';
 
 const priorities = ['Low', 'Medium', 'High'];
 const levels = ['Easy', 'Medium', 'Hard'];
 const categories = ['Bug', 'Feature', 'Research', 'Documentation', 'Design', 'Deployment'];
-const statuses = ['Backlog', 'To Do', 'In Progress', 'Review', 'Done'];
+const statuses = [
+    { id: 'backlog', label: 'Backlog' },
+    { id: 'todo', label: 'To Do' },
+    { id: 'inProgress', label: 'In Progress' },
+    { id: 'review', label: 'Review' },
+    { id: 'done', label: 'Done' },
+];
 
 // Mock users – replace with real data from API later
 const mockUsers = [
@@ -23,6 +30,8 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
 
     const [loading, setLoading] = useState(false);
     const [newTag, setNewTag] = useState('');
+    const [showUserSuggestions, setShowUserSuggestions] = useState(false);
+    const [userQuery, setUserQuery] = useState('');
 
     const [form, setForm] = useState({
         title: '',
@@ -43,21 +52,21 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
     // Reset form when modal opens
     useEffect(() => {
         if (isOpen) {
-            setForm({
-                title: '',
-                description: '',
-                priority: 'Medium',
-                taskLevel: 'Medium',
-                category: 'Feature',
-                status: 'To Do',
-                assignee: '',
-                dueDate: '',
-                estimatedHours: '',
-                tags: [],
-                sprintId: '',
-                epicId: '',
-                communityId: currentCommunity?.id || '',
-            });
+                setForm({
+                    title: '',
+                    description: '',
+                    priority: 'Medium',
+                    taskLevel: 'Medium',
+                    category: 'Feature',
+                    status: currentCommunity ? 'todo' : 'backlog',
+                    assignee: '',
+                    dueDate: '',
+                    estimatedHours: '',
+                    tags: [],
+                    sprintId: '',
+                    epicId: '',
+                    communityId: currentCommunity?.id || '',
+                });
             setNewTag('');
         }
     }, [isOpen, currentCommunity]);
@@ -65,10 +74,25 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
     const handleAddTag = (e) => {
         e.preventDefault();
         const trimmed = newTag.trim();
-        if (trimmed && !form.tags.includes(trimmed)) {
-            setForm({ ...form, tags: [...form.tags, trimmed] });
-            setNewTag('');
+        if (!trimmed) return;
+
+        // If user typed @name and selected suggestion, it will already be in the correct form.
+        // If it starts with @ but wasn't selected, try to match a user by query
+        if (trimmed.startsWith('@')) {
+            const q = trimmed.slice(1).toLowerCase();
+            const matched = mockUsers.find(u => u.name.toLowerCase().includes(q));
+            const tagValue = matched ? `@${matched.name}` : trimmed;
+            if (!form.tags.includes(tagValue)) {
+                setForm({ ...form, tags: [...form.tags, tagValue] });
+            }
+        } else {
+            if (!form.tags.includes(trimmed)) {
+                setForm({ ...form, tags: [...form.tags, trimmed] });
+            }
         }
+        setNewTag('');
+        setShowUserSuggestions(false);
+        setUserQuery('');
     };
     
     const handleRemoveTag = (tagToRemove) => {
@@ -92,7 +116,21 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
 
         setLoading(true);
         try {
-            await dispatch(createTask(form)).unwrap();
+            const created = await dispatch(createTask(form)).unwrap();
+
+            // Dispatch notifications for any @-tagged users
+            (created.tags || []).forEach((tag) => {
+                if (typeof tag === 'string' && tag.startsWith('@')) {
+                    const username = tag.slice(1);
+                    dispatch(addNotification({
+                        type: 'mention',
+                        message: `Current User tagged you in task #${created.id}: "${created.title}"`,
+                        taskId: created.id,
+                        mentionedUser: username,
+                    }));
+                }
+            });
+
             onClose();
         } catch (err) {
             console.error('Failed to create task:', err);
@@ -101,6 +139,8 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
             setLoading(false);
         }
     };
+
+    const filteredUsers = mockUsers.filter(u => u.name.toLowerCase().includes(userQuery.toLowerCase()));
 
     if (!isOpen) return null;
 
@@ -178,8 +218,8 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                                 className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 transition"
                             >
                                 {statuses.map((s) => (
-                                    <option key={s} value={s}>
-                                        {s}
+                                    <option key={s.id} value={s.id}>
+                                        {s.label}
                                     </option>
                                 ))}
                             </select>
@@ -255,11 +295,46 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                             <input
                                 type="text"
                                 value={newTag}
-                                onChange={(e) => setNewTag(e.target.value)}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setNewTag(val);
+                                    if (val.startsWith('@')) {
+                                        setUserQuery(val.slice(1));
+                                        setShowUserSuggestions(true);
+                                    } else {
+                                        setShowUserSuggestions(false);
+                                        setUserQuery('');
+                                    }
+                                }}
                                 onKeyDown={(e) => e.key === 'Enter' && handleAddTag(e)}
                                 className="flex-1 px-5 py-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 transition"
                                 placeholder="Type tag and press Enter"
                             />
+                            {showUserSuggestions && filteredUsers.length > 0 && (
+                                <div className="absolute mt-2 left-0 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-20 max-h-60 overflow-y-auto">
+                                    {filteredUsers.map((user) => (
+                                        <button
+                                            key={user.id}
+                                            type="button"
+                                            onClick={() => {
+                                                const tagValue = `@${user.name}`;
+                                                if (!form.tags.includes(tagValue)) {
+                                                    setForm({ ...form, tags: [...form.tags, tagValue] });
+                                                }
+                                                setNewTag('');
+                                                setShowUserSuggestions(false);
+                                                setUserQuery('');
+                                            }}
+                                            className="w-full text-left px-4 py-3 hover:bg-indigo-50 transition flex items-center gap-3"
+                                        >
+                                            <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
+                                                {user.name[0]}
+                                            </div>
+                                            <span className="font-medium">{user.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                             <button
                                 type="button"
                                 onClick={handleAddTag}

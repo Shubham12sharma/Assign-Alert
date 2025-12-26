@@ -134,7 +134,8 @@ export default function TaskBoard() {
     const [activeId, setActiveId] = useState(null);
     const [selectedTask, setSelectedTask] = useState(null);
     const [newComment, setNewComment] = useState('');
-
+    const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+    const { mode } = useSelector(state => state.auth);
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -178,10 +179,14 @@ export default function TaskBoard() {
     );
 
     useEffect(() => {
-        if (currentCommunity?.id) {
-            dispatch(fetchTasks({ communityId: currentCommunity.id }));
+        if (mode === 'personal') {
+            dispatch(fetchTasks({ communityId: 'all' }));
+        } else {
+            if (currentCommunity?.id) {
+                dispatch(fetchTasks({ communityId: currentCommunity.id }));
+            }
         }
-    }, [dispatch, currentCommunity]);
+    }, [dispatch, currentCommunity, mode]);
 
     const handleDragEnd = (event) => {
         const { active, over } = event;
@@ -244,7 +249,10 @@ export default function TaskBoard() {
         <PageWrapper>
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Task Kanban Board</h1>
-                <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                <button
+                    onClick={() => setIsTaskModalOpen(true)}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+                >
                     + Create Task
                 </button>
             </div>
@@ -285,6 +293,12 @@ export default function TaskBoard() {
                     {activeTask ? <TaskCard task={activeTask} isDragging /> : null}
                 </DragOverlay>
             </DndContext>
+
+                {/* Create Task Modal */}
+                <TaskModal
+                    isOpen={isTaskModalOpen}
+                    onClose={() => setIsTaskModalOpen(false)}
+                />
 
             {/* Right-Side Task Detail Panel */}
             {selectedTask && (

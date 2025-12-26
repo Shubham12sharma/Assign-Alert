@@ -12,6 +12,12 @@ export default function CommunityList() {
                         <p className="text-gray-500 text-sm">12 members</p>
                     </div>
                 ))}
+
+                {user.role === 'Member' && !user.communities.includes(community.id) && (
+                    <button className="bg-green-600 text-white px-4 py-2 rounded-lg">
+                        Request to Join
+                    </button>
+                )}
             </div>
         </div>
     );

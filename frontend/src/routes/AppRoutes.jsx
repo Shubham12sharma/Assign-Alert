@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/auth/Login";
 import Signup from "../pages/auth/Signup";
 import Dashboard from "../pages/dashboard/Dashboard";
+import PersonalDashboard from "../pages/dashboard/PersonalDashboard";
 import CommunityList from "../pages/community/CommunityList";
 import TaskBoard from "../pages/tasks/TaskBoard";
 import SprintDashboard from "../pages/sprints/SprintDashboard";
@@ -10,6 +11,7 @@ import EpicDetails from "../pages/epics/EpicDetails";
 import SprintDetails from "../pages/sprints/SprintDetails";
 import AIInsights from "../pages/ai/AIInsights";
 import ProtectedRoute from "./ProtectedRoute";
+import AdminDashboard from "../pages/admin/AdminDashboard";
 
 export default function AppRoutes() {
     return (
@@ -20,11 +22,28 @@ export default function AppRoutes() {
                 <Route path="/signup" element={<Signup />} />
 
                 {/* Protected Static Routes – MUST come BEFORE dynamic routes */}
+
+                <Route
+                    path="/admin"
+                    element={
+                        <ProtectedRoute requiredRole="Admin">
+                            <AdminDashboard />
+                        </ProtectedRoute>
+                    }
+                />
                 <Route
                     path="/dashboard"
                     element={
                         <ProtectedRoute>
                             <Dashboard />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/dashboard/personal"
+                    element={
+                        <ProtectedRoute>
+                            <PersonalDashboard />
                         </ProtectedRoute>
                     }
                 />

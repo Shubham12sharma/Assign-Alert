@@ -111,17 +111,21 @@ export default function Sidebar() {
                 </div>
 
                 {user?.role === 'Super Admin' && (
-                    <div className="pt-6 border-t border-gray-200">
-                        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                            Admin Tools
-                        </h3>
-                        <Link
-                            to="/admin/dashboard"
-                            className="flex items-center p-3 text-gray-700 hover:bg-indigo-50 rounded-lg transition font-medium"
-                        >
-                            <FiHome className="mr-3 text-lg" /> Admin Dashboard
+                    <div className="mt-6 pt-4 border-t">
+                        <h3 className="text-xs font-bold uppercase text-gray-500 mb-3">Super Admin</h3>
+                        <Link to="/admin/users" className="flex items-center p-3 hover:bg-indigo-50 rounded-lg">
+                            <FiUsers className="mr-3" /> Manage Users
+                        </Link>
+                        <Link to="/admin/communities" className="flex items-center p-3 hover:bg-indigo-50 rounded-lg">
+                            <FiHome className="mr-3" /> Manage Communities
                         </Link>
                     </div>
+                )}
+
+                {user?.role === 'Admin' && (
+                    <Link to="/admin/members" className="flex items-center p-3 hover:bg-indigo-50 rounded-lg">
+                        <FiUsers className="mr-3" /> Manage Team Members
+                    </Link>
                 )}
             </nav>
         </div>

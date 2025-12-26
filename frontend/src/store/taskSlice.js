@@ -100,6 +100,86 @@ const mockTasks = [
   },
 ];
 
+
+// Add these mock personal tasks (private to the user)
+const mockPersonalTasks = [
+    {
+        id: 'p1',
+        title: 'Buy groceries',
+        description: 'Milk, eggs, bread, vegetables for the week',
+        priority: 'Medium',
+        taskLevel: 'Easy',
+        category: 'Personal',
+        status: 'todo',
+        assignee: { name: 'Me' },
+        dueDate: '2025-12-28',
+        estimatedHours: 2,
+        storyPoints: 2,
+        tags: ['home', 'shopping'],
+        comments: [],
+        attachments: [],
+        activityLogs: [],
+        createdAt: '2025-12-26',
+        isPersonal: true, // Flag to identify personal tasks
+    },
+    {
+        id: 'p2',
+        title: 'Call mom',
+        description: 'Wish her happy holidays',
+        priority: 'High',
+        taskLevel: 'Easy',
+        category: 'Personal',
+        status: 'todo',
+        assignee: { name: 'Me' },
+        dueDate: '2025-12-26',
+        estimatedHours: 0.5,
+        storyPoints: 1,
+        tags: ['family', 'personal'],
+        comments: [],
+        attachments: [],
+        activityLogs: [],
+        createdAt: '2025-12-25',
+        isPersonal: true,
+    },
+    {
+        id: 'p3',
+        title: 'Finish reading book',
+        description: 'Chapter 5-10 of "Atomic Habits"',
+        priority: 'Low',
+        taskLevel: 'Medium',
+        category: 'Personal',
+        status: 'inProgress',
+        assignee: { name: 'Me' },
+        dueDate: '2026-01-05',
+        estimatedHours: 6,
+        storyPoints: 3,
+        tags: ['self-improvement', 'reading'],
+        comments: [],
+        attachments: [],
+        activityLogs: [],
+        createdAt: '2025-12-20',
+        isPersonal: true,
+    },
+    {
+        id: 'p4',
+        title: 'Gym workout',
+        description: 'Full body routine',
+        priority: 'Medium',
+        taskLevel: 'Medium',
+        category: 'Personal',
+        status: 'done',
+        assignee: { name: 'Me' },
+        dueDate: '2025-12-25',
+        estimatedHours: 1,
+        storyPoints: 2,
+        tags: ['health', 'fitness'],
+        comments: [],
+        attachments: [],
+        activityLogs: [],
+        createdAt: '2025-12-25',
+        isPersonal: true,
+    },
+];
 /* ==================== ASYNC THUNKS ==================== */
 
 export const fetchTasks = createAsyncThunk(
@@ -185,6 +265,17 @@ export const addCommentToTask = createAsyncThunk(
                     timestamp: new Date().toISOString(),
                 },
             };
+        } catch (error) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+export const fetchPersonalTasks = createAsyncThunk(
+    'task/fetchPersonalTasks',
+    async (_, { rejectWithValue }) => {
+        try {
+            await new Promise(resolve => setTimeout(resolve, 600));
+            return mockPersonalTasks;
         } catch (error) {
             return rejectWithValue(error.message);
         }
@@ -290,7 +381,21 @@ const taskSlice = createSlice({
                         timestamp: comment.timestamp,
                     });
                 }
-            });
+            })
+      // Personal Tasks
+      .addCase(fetchPersonalTasks.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchPersonalTasks.fulfilled, (state, action) => {
+        state.loading = false;
+        state.tasks = action.payload; // mockPersonalTasks
+      })
+      .addCase(fetchPersonalTasks.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || 'Failed to load personal tasks';
+      })
+            
     },
 });
 
