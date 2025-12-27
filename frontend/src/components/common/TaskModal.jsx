@@ -5,7 +5,7 @@ import { addNotification } from '../../store/notificationSlice';
 
 const priorities = ['Low', 'Medium', 'High'];
 const levels = ['Easy', 'Medium', 'Hard'];
-const categories = ['Bug', 'Feature', 'Research', 'Documentation', 'Design', 'Deployment'];
+
 const statuses = [
     { id: 'backlog', label: 'Backlog' },
     { id: 'todo', label: 'To Do' },
@@ -13,7 +13,34 @@ const statuses = [
     { id: 'review', label: 'Review' },
     { id: 'done', label: 'Done' },
 ];
+const corporateCategories = [
+    'Bug', 'Feature', 'Research', 'Documentation', 'Design', 'Deployment'
+];
+const personalCategories = [
+    'Health', 'Family', 'Learning', 'Finance', 'Home', 'Shopping', 'Self-Improvement', 'Hobbies'
+];
 
+// categories are chosen inside the component based on auth.mode
+
+const categoryColors = {
+    // Corporate
+    Bug: 'bg-red-100 text-red-800',
+    Feature: 'bg-blue-100 text-blue-800',
+    Research: 'bg-yellow-100 text-yellow-800',
+    Documentation: 'bg-gray-100 text-gray-800',
+    Design: 'bg-purple-100 text-purple-800',
+    Deployment: 'bg-green-100 text-green-800',
+    // Personal
+    Health: 'bg-emerald-100 text-emerald-800',
+    Family: 'bg-pink-100 text-pink-800',
+    Learning: 'bg-indigo-100 text-indigo-800',
+    Finance: 'bg-amber-100 text-amber-800',
+    Home: 'bg-orange-100 text-orange-800',
+    Shopping: 'bg-cyan-100 text-cyan-800',
+    'Self-Improvement': 'bg-purple-100 text-purple-800',
+    Hobbies: 'bg-lime-100 text-lime-800',
+    default: 'bg-gray-100 text-gray-800',
+};
 // Mock users – replace with real data from API later
 const mockUsers = [
     { id: '1', name: 'John Doe' },
@@ -39,7 +66,7 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
         priority: 'Medium',
         taskLevel: 'Medium',
         category: 'Feature',
-        status: 'To Do',
+        status: 'todo',
         assignee: '',
         dueDate: '',
         estimatedHours: '',
@@ -48,6 +75,10 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
         epicId: '',
         communityId: '',
     });
+
+    // Read app mode (personal/corporate) to choose categories dynamically
+    const { mode: appMode } = useSelector((state) => state.auth || {});
+    const categories = appMode === 'personal' ? personalCategories : corporateCategories;
 
     // Reset form when modal opens
     useEffect(() => {
@@ -224,6 +255,24 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                                 ))}
                             </select>
                         </div>
+                                
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Category
+                            </label>
+                            <select
+                                value={form.category}
+                                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                                className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:ring-4 focus:ring-indigo-200 focus:border-indigo-600 transition"
+                            >
+                                {categories.map((cat) => (
+                                    <option key={cat} value={cat}>
+                                        {cat}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    
 
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">

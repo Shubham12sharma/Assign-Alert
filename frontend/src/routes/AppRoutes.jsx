@@ -12,11 +12,14 @@ import SprintDetails from "../pages/sprints/SprintDetails";
 import AIInsights from "../pages/ai/AIInsights";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminDashboard from "../pages/admin/AdminDashboard";
+import LandingPage from "../pages/LandingPage";
 
 export default function AppRoutes() {
     return (
         <BrowserRouter>
             <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/landing" element={<LandingPage />} />
                 {/* Public Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />

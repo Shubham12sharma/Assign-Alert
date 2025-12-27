@@ -201,7 +201,7 @@ export const createTask = createAsyncThunk(
   async (taskData, { rejectWithValue }) => {
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
-
+      const defaultCategory = taskData.isPersonal ? 'Health' : 'Feature';
       const newTask = {
         ...taskData,
         id: Date.now().toString(),
@@ -210,6 +210,7 @@ export const createTask = createAsyncThunk(
         storyPoints: taskData.storyPoints || 5,
         comments: [],
         attachments: taskData.attachments || [],
+        category: taskData.category || defaultCategory,
         activityLogs: [
           {
             action: 'created task',

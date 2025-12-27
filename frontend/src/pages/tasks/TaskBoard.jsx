@@ -112,7 +112,9 @@ function TaskCard({ task, isDragging, onClick }) {
                     </span>
                 ))}
             </div>
-
+            <span className={`text-xs font-medium px-3 py-1 rounded-full ${categoryColors[task.category] || categoryColors.default}`}>
+                {task.category}
+            </span>
             <div className="flex items-center justify-between">
                 <span className={`text-xs font-medium px-2 py-1 rounded-full ${priorityColor[task.priority]}`}>
                     {task.priority}
