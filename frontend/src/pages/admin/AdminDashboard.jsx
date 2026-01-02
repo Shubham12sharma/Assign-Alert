@@ -1,21 +1,46 @@
 import PageWrapper from '../../components/layout/PageWrapper';
 import { useSelector } from 'react-redux';
 import { FiUsers, FiHome, FiSettings, FiShield } from 'react-icons/fi';
+import { useState } from 'react';
+import { FiPlus } from 'react-icons/fi';
+import InviteModal from '../../components/common/InviteModal';
 
 export default function AdminDashboard() {
     const { user } = useSelector((state) => state.auth);
     const { currentCommunity } = useSelector((state) => state.community);
+    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
     return (
         <PageWrapper>
-            <div className="mb-8">
-                <h1 className="text-4xl font-bold text-gray-900">
-                    {user?.role === 'Super Admin' ? 'Super Admin Dashboard' : 'Admin Dashboard'}
-                </h1>
-                <p className="text-xl text-gray-600 mt-3">
-                    Manage your {currentCommunity?.name || 'organization'} and users
-                </p>
+            <div className="mb-8 flex items-start justify-between">
+                {/* Left: Title & Subtitle */}
+                <div>
+                    <h1 className="text-4xl font-bold text-gray-900">
+                        {user?.role === 'Super Admin'
+                            ? 'Super Admin Dashboard'
+                            : 'Admin Dashboard'}
+                    </h1>
+                    <p className="text-xl text-gray-600 mt-3">
+                        Manage your {currentCommunity?.name || 'organization'} and users
+                    </p>
+                </div>
+
+                {/* Right: Invite Button */}
+                <button
+                    onClick={() => setIsInviteModalOpen(true)}
+                    className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition flex items-center gap-3"
+                >
+                    <FiPlus />
+                    Invite Team Members
+                </button>
             </div>
+
+            <InviteModal
+                isOpen={isInviteModalOpen}
+                onClose={() => setIsInviteModalOpen(false)}
+                communityId={currentCommunity?.id}
+            />
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                 <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
@@ -42,6 +67,8 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
+                
+
                 <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
                     <div className="flex items-center gap-4 mb-4">
                         <div className="p-3 bg-purple-100 rounded-xl">
@@ -53,6 +80,7 @@ export default function AdminDashboard() {
                         </div>
                     </div>
                 </div>
+                
 
                 <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
                     <div className="flex items-center gap-4 mb-4">
@@ -66,6 +94,7 @@ export default function AdminDashboard() {
                     </div>
                 </div>
             </div>
+            
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Quick Actions */}
@@ -88,6 +117,7 @@ export default function AdminDashboard() {
                         )}
                     </div>
                 </div>
+                
 
                 {/* Recent Activity */}
                 <div className="bg-white rounded-2xl shadow-lg p-8">
