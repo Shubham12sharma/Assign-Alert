@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    FiCheckCircle,
+    FiPlus,
     FiUsers,
     FiZap,
     FiShield,
@@ -11,7 +11,12 @@ import {
     FiBarChart,
     FiMenu,
     FiX,
-    FiPlay,
+    FiCheckCircle,
+    FiGlobe,
+    FiLock,
+    FiCalendar,
+    FiMessageSquare,
+    FiBell,
 } from 'react-icons/fi';
 
 export default function LandingPage() {
@@ -25,52 +30,16 @@ export default function LandingPage() {
             name: 'Amit Verma',
             role: 'Product Manager at TechCorp',
             quote: 'Assign Alert completely transformed how we manage sprints and deadlines across distributed teams.',
-            
         },
         {
             name: 'Sneha Patel',
             role: 'Founder, StartupX',
             quote: 'The unified workspace for work and personal goals changed everything. No more context switching.',
-           
         },
         {
             name: 'Rahul Mehta',
             role: 'Engineering Lead',
             quote: 'AI-powered insights saved us hours weekly. The velocity tracking is incredibly accurate.',
-            
-        },
-    ];
-
-    const features = [
-        {
-            icon: <FiZap className="w-8 h-8" />,
-            title: 'Smart Task Management',
-            desc: 'AI-powered prioritization that learns your team\'s workflow and suggests optimal task assignments.'
-        },
-        {
-            icon: <FiUsers className="w-8 h-8" />,
-            title: 'Team Collaboration',
-            desc: 'Real-time updates, comments, and file sharing all in one unified workspace.'
-        },
-        {
-            icon: <FiBarChart className="w-8 h-8" />,
-            title: 'Analytics & Insights',
-            desc: 'Data-driven dashboards that track productivity, velocity, and team performance metrics.'
-        },
-        {
-            icon: <FiShield className="w-8 h-8" />,
-            title: 'Enterprise Security',
-            desc: 'Bank-level encryption, SSO, and compliance with GDPR, SOC 2, and HIPAA standards.'
-        },
-        {
-            icon: <FiSmartphone className="w-8 h-8" />,
-            title: 'Mobile-First Design',
-            desc: 'Manage everything on the go with our fully-featured iOS and Android apps.'
-        },
-        {
-            icon: <FiCheckCircle className="w-8 h-8" />,
-            title: 'Automation',
-            desc: 'Automate repetitive tasks and workflows to focus on high-impact work.'
         },
     ];
 
@@ -111,58 +80,38 @@ export default function LandingPage() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-white text-gray-900 overflow-hidden">
-            <style>{`
-                @keyframes float {
-                    0%, 100% { transform: translateY(0px); }
-                    50% { transform: translateY(-20px); }
-                }
-                @keyframes glow {
-                    0%, 100% { opacity: 0.5; }
-                    50% { opacity: 1; }
-                }
-                @keyframes slideInDown {
-                    from { transform: translateY(-100px); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-                @keyframes slideInUp {
-                    from { transform: translateY(100px); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                .animate-float { animation: float 6s ease-in-out infinite; }
-                .animate-glow { animation: glow 3s ease-in-out infinite; }
-                .animate-slide-down { animation: slideInDown 0.8s ease-out; }
-                .animate-slide-up { animation: slideInUp 0.8s ease-out; }
-                .animate-fade { animation: fadeIn 0.8s ease-out; }
-                .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-            `}</style>
-
+        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 overflow-hidden">
             {/* ===== HEADER ===== */}
-            <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-md z-50 border-b border-gray-100">
+            <header className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-lg z-50 border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3 font-bold text-2xl gradient-text">
-                        Assign Alert
-                    </div>
+                    <Link to="/" className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">
+                            A
+                        </div>
+                        <h1 className="text-2xl font-bold text-gray-900">Assign Alert</h1>
+                    </Link>
 
-                    <nav className="hidden lg:flex items-center gap-10">
-                        <a href="#features" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition">Features</a>
-                        <a href="#how-it-works" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition">How It Works</a>
-                        <a href="#testimonials" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition">Testimonials</a>
-                        <a href="#pricing" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition">Pricing</a>
+                    <nav className="hidden lg:flex items-center gap-8">
+                        <a href="#features" className="text-gray-700 hover:text-indigo-600 font-medium transition">Features</a>
+                        <a href="#how-it-works" className="text-gray-700 hover:text-indigo-600 font-medium transition">How It Works</a>
+                        <a href="#testimonials" className="text-gray-700 hover:text-indigo-600 font-medium transition">Testimonials</a>
+                        <a href="#pricing" className="text-gray-700 hover:text-indigo-600 font-medium transition">Pricing</a>
                     </nav>
 
                     <div className="hidden lg:flex items-center gap-4">
-                        <Link to="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition">Sign In</Link>
-                        <Link to="/signup" className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold rounded-lg hover:shadow-lg transition">
+                        <Link to="/login" className="text-gray-700 hover:text-indigo-600 font-medium transition">Sign In</Link>
+                        <Link
+                            to="/signup"
+                            className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg transition"
+                        >
                             Start Free
                         </Link>
                     </div>
 
-                    <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden p-2">
+                    <button
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        className="lg:hidden p-2"
+                    >
                         {mobileMenuOpen ? <FiX className="text-2xl" /> : <FiMenu className="text-2xl" />}
                     </button>
                 </div>
@@ -170,10 +119,12 @@ export default function LandingPage() {
                 {mobileMenuOpen && (
                     <div className="lg:hidden bg-white border-t border-gray-100">
                         <nav className="flex flex-col p-6 gap-4">
-                            <a href="#features" className="text-gray-600 font-medium">Features</a>
-                            <a href="#how-it-works" className="text-gray-600 font-medium">How It Works</a>
-                            <a href="#testimonials" className="text-gray-600 font-medium">Testimonials</a>
-                            <Link to="/signup" className="w-full px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg">Start Free</Link>
+                            <a href="#features" className="text-gray-700 font-medium">Features</a>
+                            <a href="#how-it-works" className="text-gray-700 font-medium">How It Works</a>
+                            <a href="#testimonials" className="text-gray-700 font-medium">Testimonials</a>
+                            <Link to="/signup" className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl text-center">
+                                Start Free
+                            </Link>
                         </nav>
                     </div>
                 )}
@@ -181,69 +132,113 @@ export default function LandingPage() {
 
             {/* ===== HERO ===== */}
             <section className="relative pt-32 pb-20 px-6 overflow-hidden">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-indigo-200 to-purple-200 rounded-full blur-3xl opacity-40"></div>
-                <div className="absolute -bottom-20 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-100 to-blue-100 rounded-full blur-3xl opacity-40"></div>
+                <div className="max-w-7xl mx-auto text-center">
+                    <span className="inline-block px-6 py-3 mb-6 text-sm font-semibold text-indigo-700 bg-indigo-100 rounded-full">
+                        AI-Powered Corporate & Personal Productivity
+                    </span>
 
-                <div className="max-w-5xl mx-auto text-center relative z-10">
-                    <div className="animate-slide-down">
-                        <div className="inline-block mb-6">
-                            <span className="px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 text-sm font-semibold rounded-full border border-indigo-200">
-                                ✨ Trusted by 1000+ teams
-                            </span>
-                        </div>
+                    <h1 className="text-5xl lg:text-7xl font-extrabold text-gray-900 mb-8 leading-tight">
+                        Assign Alert
+                    </h1>
 
-                        <h1 className="text-6xl md:text-7xl font-black mb-8 leading-tight">
-                            Manage Work & Life, <span className="gradient-text">Effortlessly</span>
-                        </h1>
+                    <p className="text-2xl lg:text-4xl text-gray-700 mb-10 max-w-5xl mx-auto">
+                        AI-Powered Corporate Task, Sprint & Community Management System
+                    </p>
 
-                        <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
-                            One unified platform for epics, sprints, tasks, and personal goals. Powered by AI that learns your workflow.
-                        </p>
+                    <p className="text-xl text-gray-600 mb-12 max-w-4xl mx-auto leading-relaxed">
+                        One platform for work and life. Manage teams, branches, sprints, epics, and personal goals with intelligent AI insights.
+                    </p>
 
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                            <Link to="/signup" className="group px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg text-lg shadow-2xl hover:shadow-3xl transition transform hover:scale-105 flex items-center justify-center gap-3">
-                                    Start Free Trial
-                                    <FiArrowRight className="group-hover:translate-x-1 transition" />
-                                </Link>
-                            <button className="px-8 py-4 bg-white text-gray-900 font-bold rounded-lg text-lg border-2 border-gray-200 hover:border-gray-900 transition flex items-center justify-center gap-3">
-                                        <FiPlay className="w-5 h-5" />
-                                        Watch Demo
-                                    </button>
-                        </div>
+                    {/* Community CTA Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-6 justify-center mb-16">
+                        <Link
+                            to="/signup"
+                            className="group px-12 py-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xl font-bold rounded-2xl shadow-2xl hover:shadow-3xl transition transform hover:scale-105 flex items-center justify-center gap-4"
+                        >
+                            <FiPlus className="text-2xl" />
+                            Create Community
+                        </Link>
 
-                        <p className="text-gray-500 mb-16">No credit card required • 14-day free trial • Cancel anytime</p>
+                        <Link
+                            to="/login"
+                            className="group px-12 py-6 bg-white text-indigo-600 text-xl font-bold rounded-2xl border-4 border-indigo-600 hover:bg-indigo-50 shadow-2xl transition flex items-center justify-center gap-4"
+                        >
+                            <FiUsers className="text-2xl" />
+                            Join Community
+                        </Link>
                     </div>
 
-                    {/* Hero Image */}
-                    <div className="animate-float">
-                        <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 to-purple-600/20"></div>
-                            <img
-                                src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=600&fit=crop"
-                                alt="Dashboard"
-                                className="w-full h-auto"
-                            />
+                    <p className="text-gray-600 mb-8">
+                        No credit card required • 14-day free trial
+                    </p>
+                </div>
+
+                {/* Background Blobs */}
+                <div className="absolute top-0 left-0 w-96 h-96 bg-indigo-300 rounded-full blur-3xl opacity-30"></div>
+                <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-300 rounded-full blur-3xl opacity-30"></div>
+            </section>
+
+            {/* ===== VISUAL SHOWCASE ===== */}
+            <section className="max-w-7xl mx-auto px-6 py-20">
+                <h2 className="text-5xl font-black text-center mb-16">
+                    Real Teams, Real Workflows
+                </h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+                    <div className="group relative rounded-3xl overflow-hidden shadow-2xl hover:shadow-3xl transition duration-500">
+                        <img
+                            src="https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=800&fit=crop"
+                            alt="Diverse corporate team in modern office"
+                            className="w-full h-96 object-cover transition duration-700 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition duration-500 flex items-end p-8">
+                            <p className="text-white text-2xl font-bold">Collaborative Planning</p>
+                        </div>
+                    </div>
+
+                    <div className="group relative rounded-3xl overflow-hidden shadow-2xl hover:shadow-3xl transition duration-500">
+                        <img
+                            src="https://static.vecteezy.com/system/resources/previews/048/685/797/original/kanban-board-with-team-hands-agile-software-development-process-project-management-system-cartoon-illustration-vector.jpg"
+                            alt="Animated Kanban workflow with team"
+                            className="w-full h-96 object-cover transition duration-700 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition duration-500 flex items-end p-8">
+                            <p className="text-white text-2xl font-bold">Visual Task Management</p>
+                        </div>
+                    </div>
+
+                    <div className="group relative rounded-3xl overflow-hidden shadow-2xl hover:shadow-3xl transition duration-500">
+                        <img
+                            src="https://img.freepik.com/premium-vector/project-management-concept-vector-illustration-business-team-working-together-with-project-data-dashboard-office_453374-40.jpg"
+                            alt="Team analyzing data dashboard"
+                            className="w-full h-96 object-cover transition duration-700 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition duration-500 flex items-end p-8">
+                            <p className="text-white text-2xl font-bold">AI-Powered Insights</p>
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* ===== STATS ===== */}
-            <section className="bg-gradient-to-r from-indigo-600 to-purple-600 py-16 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-0 left-10 text-8xl font-bold text-white opacity-5">📊</div>
-                    <div className="absolute bottom-0 right-10 text-8xl font-bold text-white opacity-5">⚡</div>
-                </div>
-                <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-10 text-center text-white relative z-10">
+            <section className="bg-gradient-to-r from-indigo-600 to-purple-600 py-20">
+                <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-10 text-center text-white">
                     {[
                         { label: 'Active Teams', value: '1200', suffix: '+' },
-                        { label: 'Tasks Managed', value: '450', suffix: 'K+' },
-                        { label: 'Uptime', value: '99.9', suffix: '%' },
-                        { label: 'Avg. Time Saved', value: '8', suffix: 'hrs/week' },
+                        { label: 'Tasks Managed', value: '45000', suffix: '+' },
+                        { label: 'Sprints Completed', value: '3200', suffix: '+' },
+                        { label: 'Productivity Boost', value: '38', suffix: '%' },
                     ].map((stat, i) => (
                         <div key={i}>
-                            <div ref={(el) => (countersRef.current[i] = el)} data-target={stat.value} data-suffix={stat.suffix} className="text-5xl md:text-6xl font-black mb-2">0</div>
-                            <p className="text-sm opacity-90 font-medium">{stat.label}</p>
+                            <div
+                                ref={(el) => (countersRef.current[i] = el)}
+                                data-target={stat.value}
+                                data-suffix={stat.suffix}
+                                className="text-6xl font-extrabold mb-4"
+                            >
+                                0
+                            </div>
+                            <p className="text-xl opacity-90">{stat.label}</p>
                         </div>
                     ))}
                 </div>
@@ -251,134 +246,175 @@ export default function LandingPage() {
 
             {/* ===== FEATURES GRID ===== */}
             <section id="features" className="py-24 px-6">
-                <div className="max-w-6xl mx-auto">
-                    <div className="text-center mb-20">
-                        <h2 className="text-5xl md:text-6xl font-black mb-6">
-                            Everything you need to <span className="gradient-text">scale</span>
-                        </h2>
-                        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                            Comprehensive tools designed to help teams work smarter, not harder.
-                        </p>
-                    </div>
-
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {features.map((feature, i) => (
-                            <div key={i} className="group p-8 rounded-2xl border border-gray-100 hover:border-indigo-200 hover:shadow-lg transition duration-300 bg-gradient-to-br from-white to-gray-50">
-                                <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center text-indigo-600 mb-6 group-hover:scale-110 transition">
-                                    {feature.icon}
-                                </div>
-                                <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-                                <p className="text-gray-600 leading-relaxed">{feature.desc}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            {/* ===== VISUAL SHOWCASE ===== */}
-            <section id="how-it-works" className="py-24 px-6 bg-gray-50">
-                <div className="max-w-6xl mx-auto">
-                    <h2 className="text-5xl md:text-6xl font-black text-center mb-20">
-                        See it in action
+                <div className="max-w-7xl mx-auto">
+                    <h2 className="text-5xl font-black text-center mb-16">
+                        Everything You Need in One Platform
                     </h2>
 
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {[
-                            { title: 'Team Collaboration', img: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop',  },
-                            { title: 'Visual Workflows', img: 'https://vksapp.com/_next/image?url=https%3A%2F%2Fstrapi.vksapp.com%2Fuploads%2FVisual_Work_Instructions_4bf760cdf7.jpg&w=2400&q=75', },
-                            { title: 'Smart Analytics', img: 'https://www.tibco.com/blog/wp-content/uploads/2015/02/45968386_thumbnail1.jpg',},
-                        ].map((item, i) => (
-                            <div key={i} className="group relative rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition duration-500">
-                                <img src={item.img} alt={item.title} className="w-full h-64 object-cover group-hover:scale-110 transition duration-700" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition duration-500">
-                                    <span className="text-5xl mb-3">{item.icon}</span>
-                                    <p className="text-white text-2xl font-bold">{item.title}</p>
-                                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                        {/* Corporate Teams */}
+                        <div className="bg-white rounded-3xl shadow-xl p-10 border border-gray-100 hover:shadow-2xl transition">
+                            <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mb-8">
+                                <FiUsers className="text-4xl text-indigo-600" />
                             </div>
-                        ))}
+                            <h3 className="text-3xl font-bold mb-6">Corporate Teams</h3>
+                            <ul className="space-y-4 text-gray-600">
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Hierarchical communities (branches, teams)</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Role-based access control</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Epics, Monthly & Weekly Sprints</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Kanban, Gantt, Calendar views</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Velocity & burndown tracking</li>
+                            </ul>
+                        </div>
+
+                        {/* Personal Life */}
+                        <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl shadow-xl p-10 text-white hover:shadow-2xl transition">
+                            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mb-8">
+                                <FiStar className="text-4xl" />
+                            </div>
+                            <h3 className="text-3xl font-bold mb-6">Personal Life</h3>
+                            <ul className="space-y-4">
+                                <li className="flex items-center gap-3"><FiCheckCircle /> Private tasks separate from work</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle /> Health, Family, Learning categories</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle /> Daily focus & habit tracking</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle /> Simple todo & calendar</li>
+                            </ul>
+                        </div>
+
+                        {/* AI Intelligence */}
+                        <div className="bg-white rounded-3xl shadow-xl p-10 border border-gray-100 hover:shadow-2xl transition">
+                            <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mb-8">
+                                <FiZap className="text-4xl text-purple-600" />
+                            </div>
+                            <h3 className="text-3xl font-bold mb-6">AI Intelligence</h3>
+                            <ul className="space-y-4 text-gray-600">
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Auto priority & category suggestions</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Deadline risk prediction</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Workload balancing</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Natural language task creation</li>
+                            </ul>
+                        </div>
+
+                        {/* Security */}
+                        <div className="bg-white rounded-3xl shadow-xl p-10 border border-gray-100 hover:shadow-2xl transition">
+                            <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mb-8">
+                                <FiShield className="text-4xl text-green-600" />
+                            </div>
+                            <h3 className="text-3xl font-bold mb-6">Enterprise Security</h3>
+                            <ul className="space-y-4 text-gray-600">
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> JWT authentication</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Role-based access control</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Data isolation per community</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Full audit logs</li>
+                            </ul>
+                        </div>
+
+                        {/* Views */}
+                        <div className="bg-white rounded-3xl shadow-xl p-10 border border-gray-100 hover:shadow-2xl transition">
+                            <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-8">
+                                <FiBarChart className="text-4xl text-blue-600" />
+                            </div>
+                            <h3 className="text-3xl font-bold mb-6">Multiple Views</h3>
+                            <ul className="space-y-4 text-gray-600">
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Kanban Board</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> List & Calendar</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Interactive Gantt Chart</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Personal & Admin Dashboards</li>
+                            </ul>
+                        </div>
+
+                        {/* Mobile */}
+                        <div className="bg-white rounded-3xl shadow-xl p-10 border border-gray-100 hover:shadow-2xl transition">
+                            <div className="w-16 h-16 bg-cyan-100 rounded-2xl flex items-center justify-center mb-8">
+                                <FiSmartphone className="text-4xl text-cyan-600" />
+                            </div>
+                            <h3 className="text-3xl font-bold mb-6">Mobile Ready</h3>
+                            <p className="text-gray-600 mb-6">Coming soon: Native apps with voice creation</p>
+                            <ul className="space-y-4 text-gray-600">
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Full offline sync</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Voice commands</li>
+                                <li className="flex items-center gap-3"><FiCheckCircle className="text-green-500" /> Push notifications</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </section>
 
             {/* ===== TESTIMONIALS ===== */}
-            <section id="testimonials" className="py-24 px-6">
-                <div className="max-w-4xl mx-auto">
-                    <div className="text-center mb-16">
-                        <h2 className="text-5xl md:text-6xl font-black mb-6">Loved by teams everywhere</h2>
-                        <p className="text-xl text-gray-600">Join thousands of organizations that are transforming their workflow.</p>
-                    </div>
-
-                    <div className="relative h-80 md:h-64">
-                        {testimonials.map((t, i) => (
-                            <div
-                                key={i}
-                                className={`absolute inset-0 transition-all duration-700 ${i === activeTestimonial ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                                    }`}
-                            >
-                                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100 p-12 h-full flex flex-col justify-center">
-                                    <div className="flex items-center gap-4 mb-8">
-                                        <div className="text-5xl">{t.avatar}</div>
-                                        <div>
-                                            <h4 className="font-bold text-lg">{t.name}</h4>
-                                            <p className="text-gray-600 text-sm">{t.role}</p>
-                                        </div>
-                                    </div>
-                                    <p className="text-xl text-gray-900 leading-relaxed italic">"{t.quote}"</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="flex justify-center gap-3 mt-8">
-                        {testimonials.map((_, i) => (
-                            <button
-                                key={i}
-                                onClick={() => setActiveTestimonial(i)}
-                                className={`w-3 h-3 rounded-full transition ${i === activeTestimonial ? 'bg-indigo-600 w-8' : 'bg-gray-300'
-                                    }`}
-                            />
-                        ))}
+            <section className="py-24 px-6 bg-gradient-to-r from-indigo-600 to-purple-600">
+                <div className="max-w-4xl mx-auto text-center text-white">
+                    <h2 className="text-5xl font-black mb-12">Loved by Teams Worldwide</h2>
+                    <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-12">
+                        <p className="text-3xl italic mb-8 leading-relaxed">
+                            "{testimonials[activeTestimonial].quote}"
+                        </p>
+                        <p className="font-bold text-xl">{testimonials[activeTestimonial].name}</p>
+                        <p className="opacity-90">{testimonials[activeTestimonial].role}</p>
                     </div>
                 </div>
             </section>
 
-            {/* ===== CTA ===== */}
-            <section className="py-24 px-6 bg-gradient-to-br from-indigo-600 via-purple-600 to-purple-700 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-0 right-0 text-9xl font-black text-white">→</div>
-                </div>
-                <div className="max-w-4xl mx-auto text-center relative z-10">
-                    <h2 className="text-5xl md:text-6xl font-black text-white mb-8">Ready to transform your workflow?</h2>
-                    <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto">Join thousands of teams already using Assign Alert to work smarter.</p>
-                    <Link to="/signup" className="px-10 py-4 bg-white text-indigo-600 font-bold rounded-lg text-lg hover:shadow-2xl transition transform hover:scale-105">
-                        Start Your Free Trial
-                    </Link>
+            {/* ===== FINAL CTA ===== */}
+            <section className="py-24 px-6">
+                <div className="max-w-4xl mx-auto text-center">
+                    <h2 className="text-5xl font-black mb-8">Start Building Better Habits Today</h2>
+                    <p className="text-2xl text-gray-600 mb-12">
+                        Join thousands of professionals already using Assign Alert
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                        <Link
+                            to="/signup"
+                            className="px-12 py-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xl font-bold rounded-2xl shadow-2xl hover:shadow-3xl transition transform hover:scale-105"
+                        >
+                            Get Started Free
+                        </Link>
+                    </div>
                 </div>
             </section>
 
             {/* ===== FOOTER ===== */}
             <footer className="bg-gray-900 text-gray-400 py-16 px-6">
-                <div className="max-w-6xl mx-auto">
-                    <div className="grid md:grid-cols-4 gap-12 mb-12">
+                <div className="max-w-7xl mx-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
                         <div>
-                            <div className="font-black text-2xl gradient-text mb-4">Assign Alert</div>
-                            <p className="text-sm">AI-powered productivity for work and life.</p>
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl">
+                                    A
+                                </div>
+                                <h3 className="text-2xl font-bold text-white">Assign Alert</h3>
+                            </div>
+                            <p className="text-sm">AI-Powered Productivity for Work and Life</p>
                         </div>
+
                         <div>
-                            <h4 className="text-white font-bold mb-6 text-sm">PRODUCT</h4>
-                            <ul className="space-y-3 text-sm"><li><a href="#" className="hover:text-white">Features</a></li><li><a href="#" className="hover:text-white">Pricing</a></li><li><a href="#" className="hover:text-white">Security</a></li></ul>
+                            <h4 className="text-white font-bold mb-6">Product</h4>
+                            <ul className="space-y-3 text-sm">
+                                <li><a href="#" className="hover:text-white transition">Features</a></li>
+                                <li><a href="#" className="hover:text-white transition">Pricing</a></li>
+                                <li><a href="#" className="hover:text-white transition">Security</a></li>
+                            </ul>
                         </div>
+
                         <div>
-                            <h4 className="text-white font-bold mb-6 text-sm">COMPANY</h4>
-                            <ul className="space-y-3 text-sm"><li><a href="#" className="hover:text-white">About</a></li><li><a href="#" className="hover:text-white">Blog</a></li><li><a href="#" className="hover:text-white">Careers</a></li></ul>
+                            <h4 className="text-white font-bold mb-6">Company</h4>
+                            <ul className="space-y-3 text-sm">
+                                <li><a href="#" className="hover:text-white transition">About</a></li>
+                                <li><a href="#" className="hover:text-white transition">Blog</a></li>
+                                <li><a href="#" className="hover:text-white transition">Contact</a></li>
+                            </ul>
                         </div>
+
                         <div>
-                            <h4 className="text-white font-bold mb-6 text-sm">LEGAL</h4>
-                            <ul className="space-y-3 text-sm"><li><a href="#" className="hover:text-white">Privacy</a></li><li><a href="#" className="hover:text-white">Terms</a></li><li><a href="#" className="hover:text-white">Cookies</a></li></ul>
+                            <h4 className="text-white font-bold mb-6">Legal</h4>
+                            <ul className="space-y-3 text-sm">
+                                <li><a href="#" className="hover:text-white transition">Privacy</a></li>
+                                <li><a href="#" className="hover:text-white transition">Terms</a></li>
+                            </ul>
                         </div>
                     </div>
-                    <div className="border-t border-gray-800 pt-8 text-center text-sm">
-                        <p>© 2025 Assign Alert. All rights reserved.</p>
+
+                    <div className="border-t border-gray-800 pt-8 text-center">
+                        <p className="text-sm">© 2025 Assign Alert. All rights reserved.</p>
                     </div>
                 </div>
             </footer>
