@@ -52,16 +52,24 @@ class UserSerializer(serializers.ModelSerializer):
         return full if full else instance.username
 
 
+
+
 class CommunitySerializer(serializers.ModelSerializer):
-    mongo_id = serializers.SerializerMethodField()
+    mongo_id = serializers.CharField(required=True)  # ← Allow writing (required for POST)
 
     class Meta:
         model = Community
-        fields = "__all__"
+        fields = ['mongo_id', 'name', 'parent', 'members', 'member_count']
+        extra_kwargs = {
+            'mongo_id': {'write_only': False, 'read_only': False},  # Explicitly allow read & write
+        }
 
-    def get_mongo_id(self, obj):
-        return str(obj.id)   
-
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        # Safety: ensure mongo_id is always string in response
+        if 'mongo_id' in ret and ret['mongo_id']:
+            ret['mongo_id'] = str(ret['mongo_id'])
+        return ret
 
 
 class TaskSerializer(serializers.ModelSerializer):

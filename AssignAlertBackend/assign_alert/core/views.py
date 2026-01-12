@@ -102,9 +102,9 @@ class CommunityViewSet(viewsets.ModelViewSet):
     serializer_class = CommunitySerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    # IMPORTANT FIX HERE ↓
-    lookup_field = 'mongo_id'          # ← Tell DRF to use mongo_id instead of pk
-    lookup_url_kwarg = 'mongo_id'      # ← Match the URL <mongo_id> in path
+    # These two lines are the KEY FIX
+    lookup_field = 'mongo_id'         # Use mongo_id instead of pk
+    lookup_url_kwarg = 'mongo_id'     # Match the <mongo_id> in URL
 
     def get_queryset(self):
         user_id = str(self.request.user.pk)
@@ -112,8 +112,9 @@ class CommunityViewSet(viewsets.ModelViewSet):
             return Community.objects.all()
         return Community.objects.filter(members__contains=[user_id])
 
+    # Update action methods to use mongo_id instead of pk
     @action(detail=True, methods=['post'])
-    def join(self, request, mongo_id=None):  # ← Change pk=None to mongo_id=None
+    def join(self, request, mongo_id=None):
         community = self.get_object()
         user_id = str(request.user.pk)
         if user_id not in community.members:
@@ -123,7 +124,7 @@ class CommunityViewSet(viewsets.ModelViewSet):
         return Response({'status': 'joined'})
 
     @action(detail=True, methods=['post'])
-    def leave(self, request, mongo_id=None):  # ← Change pk=None to mongo_id=None
+    def leave(self, request, mongo_id=None):
         community = self.get_object()
         user_id = str(request.user.pk)
         if user_id in community.members:
