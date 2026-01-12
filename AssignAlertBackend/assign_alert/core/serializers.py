@@ -73,23 +73,68 @@ class CommunitySerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    
+    id = serializers.CharField(read_only=True, source='pk')  # Force ID as string
+
     class Meta:
         model = Task
         fields = '__all__'
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        # Safety: convert any ObjectId fields to string
+        for field in ['id', 'assignee', 'community']:
+            if field in ret and ret[field]:
+                ret[field] = str(ret[field])
+        return ret
 
 class EpicSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(read_only=True, source='pk')
+
     class Meta:
         model = Epic
         fields = '__all__'
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+
+        # Convert possible ObjectId fields to string
+        for field in ['id', 'community']:
+            if field in ret and ret[field]:
+                ret[field] = str(ret[field])
+
+        return ret
+
+
 class SprintSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(read_only=True, source='pk')
+
     class Meta:
         model = Sprint
         fields = '__all__'
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+
+        for field in ['id', 'epic', 'community']:
+            if field in ret and ret[field]:
+                ret[field] = str(ret[field])
+
+        return ret
+
+
 class AlertSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(read_only=True, source='pk')
+
     class Meta:
         model = Alert
         fields = '__all__'
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+
+        for field in ['id', 'user', 'task', 'sprint']:
+            if field in ret and ret[field]:
+                ret[field] = str(ret[field])
+
+        return ret
+

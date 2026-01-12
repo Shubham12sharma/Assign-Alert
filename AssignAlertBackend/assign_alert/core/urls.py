@@ -12,7 +12,7 @@ from .views import (
 router = DefaultRouter()
 router.register(r'users', UserViewSet)
 router.register(r'communities', CommunityViewSet, basename='community')
-router.register(r'tasks', TaskViewSet)
+router.register(r'tasks', TaskViewSet, basename='task')
 router.register(r'epics', EpicViewSet)
 router.register(r'sprints', SprintViewSet)
 router.register(r'alerts', AlertViewSet)

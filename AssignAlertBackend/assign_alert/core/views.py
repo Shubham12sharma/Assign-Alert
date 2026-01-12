@@ -19,7 +19,7 @@ from .serializers import (
     UserSerializer, CommunitySerializer, TaskSerializer,
     EpicSerializer, SprintSerializer, AlertSerializer
 )
-
+from .permissions import IsSuperAdmin
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -100,19 +100,24 @@ class UserViewSet(viewsets.ModelViewSet):
 class CommunityViewSet(viewsets.ModelViewSet):
     queryset = Community.objects.all()
     serializer_class = CommunitySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'mongo_id'
+    lookup_url_kwarg = 'mongo_id'
 
-    # These two lines are the KEY FIX
-    lookup_field = 'mongo_id'         # Use mongo_id instead of pk
-    lookup_url_kwarg = 'mongo_id'     # Match the <mongo_id> in URL
+    def get_permissions(self):
+        """
+        - Anyone authenticated can list, retrieve, join, leave
+        - Only Super Admin can create, update, partial_update, destroy
+        """
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsSuperAdmin()]
+        return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
         user_id = str(self.request.user.pk)
-        if getattr(self.request.user, 'role', None) == 'Super Admin':
+        if self.request.user.role == 'Super Admin':
             return Community.objects.all()
         return Community.objects.filter(members__contains=[user_id])
 
-    # Update action methods to use mongo_id instead of pk
     @action(detail=True, methods=['post'])
     def join(self, request, mongo_id=None):
         community = self.get_object()
@@ -139,6 +144,10 @@ class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    # These lines prevent integer conversion crash
+    lookup_field = 'pk'                # Keep as 'pk' (MongoDB uses _id internally)
+    lookup_url_kwarg = 'pk'
 
     def get_queryset(self):
         user = self.request.user
@@ -169,7 +178,6 @@ class TaskViewSet(viewsets.ModelViewSet):
         task.comments.append(comment)
         task.save()
         return Response({'status': 'comment added'})
-
 
 class EpicViewSet(viewsets.ModelViewSet):
     queryset = Epic.objects.all()
