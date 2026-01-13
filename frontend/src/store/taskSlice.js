@@ -1,410 +1,97 @@
-// src/store/taskSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import api from '../api/api';
 
-// Mock tasks with storyPoints for velocity
-const mockTasks = [
-  {
-    id: '1',
-    title: 'Fix authentication timeout issue',
-    description: 'Users are being logged out too quickly in production.',
-    priority: 'High',
-    taskLevel: 'Hard',
-    category: 'Bug',
-    status: 'inProgress',
-    assignee: { name: 'John Doe', id: '1' },
-    dueDate: '2025-12-30',
-    estimatedHours: 8,
-    storyPoints: 8,
-    communityId: 'branch-1',
-    tags: ['auth', 'security', 'urgent'],
-    comments: [],
-    attachments: [],
-    activityLogs: [],
-    createdAt: '2025-12-20',
-  },
-  {
-    id: '2',
-    title: 'Implement AI deadline risk predictor',
-    description: 'Build backend endpoint for AI risk analysis.',
-    priority: 'High',
-    taskLevel: 'Hard',
-    category: 'Feature',
-    status: 'todo',
-    assignee: { name: 'Jane Smith', id: '2' },
-    dueDate: '2026-01-15',
-    estimatedHours: 20,
-    storyPoints: 13,
-    communityId: 'branch-1',
-    tags: ['AI', 'backend', 'priority'],
-    comments: [],
-    attachments: [],
-    activityLogs: [],
-    createdAt: '2025-12-22',
-  },
-  {
-    id: '3',
-    title: 'Design new dashboard widgets',
-    description: 'Create mockups for AI insights and sprint velocity.',
-    priority: 'Medium',
-    taskLevel: 'Medium',
-    category: 'Design',
-    status: 'review',
-    assignee: { name: 'Alice Chen', id: '3' },
-    dueDate: '2025-12-28',
-    estimatedHours: 12,
-    storyPoints: 5,
-    communityId: 'branch-1',
-    tags: ['UI/UX', 'dashboard'],
-    comments: [],
-    attachments: ['mockup-v1.png'],
-    activityLogs: [],
-    createdAt: '2025-12-18',
-  },
-  {
-    id: '4',
-    title: 'Write user documentation for Kanban view',
-    description: 'Document drag-and-drop, filters, and views.',
-    priority: 'Low',
-    taskLevel: 'Easy',
-    category: 'Documentation',
-    status: 'done',
-    assignee: { name: 'Bob Wilson', id: '4' },
-    dueDate: '2025-12-25',
-    estimatedHours: 6,
-    storyPoints: 3,
-    communityId: 'branch-2',
-    tags: ['docs', 'onboarding'],
-    comments: [],
-    attachments: [],
-    activityLogs: [],
-    createdAt: '2025-12-10',
-  },
-  {
-    id: '5',
-    title: 'Set up CI/CD pipeline for frontend',
-    description: 'Automate builds and deployments.',
-    priority: 'Medium',
-    taskLevel: 'Medium',
-    category: 'Deployment',
-    status: 'backlog',
-    assignee: null,
-    dueDate: null,
-    estimatedHours: 10,
-    storyPoints: 8,
-    communityId: 'branch-1',
-    tags: ['devops', 'infrastructure'],
-    comments: [],
-    attachments: [],
-    activityLogs: [],
-    createdAt: '2025-12-15',
-  },
-];
+export const fetchTasks = createAsyncThunk('task/fetchTasks', async (_, { getState }) => {
+  const { auth } = getState();
+  const response = await api.get('/tasks/');
+  return response.data;
+});
 
-
-// Add these mock personal tasks (private to the user)
-const mockPersonalTasks = [
-    {
-        id: 'p1',
-        title: 'Buy groceries',
-        description: 'Milk, eggs, bread, vegetables for the week',
-        priority: 'Medium',
-        taskLevel: 'Easy',
-        category: 'Personal',
-        status: 'todo',
-        assignee: { name: 'Me' },
-        dueDate: '2025-12-28',
-        estimatedHours: 2,
-        storyPoints: 2,
-        tags: ['home', 'shopping'],
-        comments: [],
-        attachments: [],
-        activityLogs: [],
-        createdAt: '2025-12-26',
-        isPersonal: true, // Flag to identify personal tasks
-    },
-    {
-        id: 'p2',
-        title: 'Call mom',
-        description: 'Wish her happy holidays',
-        priority: 'High',
-        taskLevel: 'Easy',
-        category: 'Personal',
-        status: 'todo',
-        assignee: { name: 'Me' },
-        dueDate: '2025-12-26',
-        estimatedHours: 0.5,
-        storyPoints: 1,
-        tags: ['family', 'personal'],
-        comments: [],
-        attachments: [],
-        activityLogs: [],
-        createdAt: '2025-12-25',
-        isPersonal: true,
-    },
-    {
-        id: 'p3',
-        title: 'Finish reading book',
-        description: 'Chapter 5-10 of "Atomic Habits"',
-        priority: 'Low',
-        taskLevel: 'Medium',
-        category: 'Personal',
-        status: 'inProgress',
-        assignee: { name: 'Me' },
-        dueDate: '2026-01-05',
-        estimatedHours: 6,
-        storyPoints: 3,
-        tags: ['self-improvement', 'reading'],
-        comments: [],
-        attachments: [],
-        activityLogs: [],
-        createdAt: '2025-12-20',
-        isPersonal: true,
-    },
-    {
-        id: 'p4',
-        title: 'Gym workout',
-        description: 'Full body routine',
-        priority: 'Medium',
-        taskLevel: 'Medium',
-        category: 'Personal',
-        status: 'done',
-        assignee: { name: 'Me' },
-        dueDate: '2025-12-25',
-        estimatedHours: 1,
-        storyPoints: 2,
-        tags: ['health', 'fitness'],
-        comments: [],
-        attachments: [],
-        activityLogs: [],
-        createdAt: '2025-12-25',
-        isPersonal: true,
-    },
-];
-/* ==================== ASYNC THUNKS ==================== */
-
-export const fetchTasks = createAsyncThunk(
-  'task/fetchTasks',
-  async ({ communityId }, { rejectWithValue }) => {
-    try {
-      await new Promise(resolve => setTimeout(resolve, 600));
-      return mockTasks.filter(
-        task => task.communityId === communityId || communityId === 'all'
-      );
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
+export const fetchPersonalTasks = createAsyncThunk('task/fetchPersonalTasks', async (_, { getState, rejectWithValue }) => {
+  try {
+    const response = await api.get('/tasks/?personal=true');
+    return response.data;
+  } catch (err) {
+    return rejectWithValue(err.response?.data || 'Failed to fetch personal tasks');
   }
-);
+});
 
-export const createTask = createAsyncThunk(
-  'task/createTask',
-  async (taskData, { rejectWithValue }) => {
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const defaultCategory = taskData.isPersonal ? 'Health' : 'Feature';
-      const newTask = {
-        ...taskData,
-        id: Date.now().toString(),
-        status: taskData.status || 'todo',
-        progress: 0,
-        storyPoints: taskData.storyPoints || 5,
-        comments: [],
-        attachments: taskData.attachments || [],
-        category: taskData.category || defaultCategory,
-        activityLogs: [
-          {
-            action: 'created task',
-            user: 'Current User',
-            timestamp: new Date().toISOString(),
-          },
-        ],
-        createdAt: new Date().toISOString(),
-      };
-
-      return newTask;
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
+export const createTask = createAsyncThunk('task/createTask', async (taskData) => {
+  const response = await api.post('/tasks/', taskData);
+  return response.data;
+});
 
 export const updateTaskStatus = createAsyncThunk(
   'task/updateTaskStatus',
-  async ({ taskId, newStatus }, { rejectWithValue }) => {
+  async ({ taskId, status }, { rejectWithValue }) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return { taskId, newStatus };
-    } catch (error) {
-      return rejectWithValue(error.message);
+      const response = await api.patch(`/tasks/${taskId}/`, { status });
+      return response.data; // return updated task
+    } catch (err) {
+      return rejectWithValue(err.response?.data || 'Failed to update task');
     }
   }
 );
-
-export const updateTask = createAsyncThunk(
-  'task/updateTask',
-  async ({ id, updates }, { rejectWithValue }) => {
-    try {
-      await new Promise(resolve => setTimeout(resolve, 400));
-      return { id, updates };
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
 
 export const addCommentToTask = createAsyncThunk(
-    'task/addCommentToTask',
-    async ({ taskId, comment }, { rejectWithValue }) => {
-        try {
-            await new Promise(resolve => setTimeout(resolve, 300)); // simulate API
-            return {
-                taskId,
-                comment: {
-                    text: comment,
-                    user: 'Current User', // Replace with real user from auth later
-                    timestamp: new Date().toISOString(),
-                },
-            };
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
+  'task/addCommentToTask',
+  async ({ taskId, comment }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/tasks/${taskId}/comments/`, { text: comment });
+      return { taskId, comment: response.data };
+    } catch (err) {
+      return rejectWithValue(err.response?.data || 'Failed to add comment');
     }
-);
-export const fetchPersonalTasks = createAsyncThunk(
-    'task/fetchPersonalTasks',
-    async (_, { rejectWithValue }) => {
-        try {
-            await new Promise(resolve => setTimeout(resolve, 600));
-            return mockPersonalTasks;
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
-    }
+  }
 );
 
-/* ==================== INITIAL STATE ==================== */
-const initialState = {
-  tasks: [],
-  currentTask: null,
-  loading: false,
-  error: null,
-  filters: {
-    priority: 'all',
-    category: 'all',
-    assignee: 'all',
-    status: 'all',
-  },
-};
-
-/* ==================== SLICE ==================== */
 const taskSlice = createSlice({
   name: 'task',
-  initialState,
-  reducers: {
-    setCurrentTask: (state, action) => {
-      state.currentTask = action.payload;
-    },
-    clearCurrentTask: (state) => {
-      state.currentTask = null;
-    },
-    setFilters: (state, action) => {
-      state.filters = { ...state.filters, ...action.payload };
-    },
-    clearFilters: (state) => {
-      state.filters = initialState.filters;
-    },
+  initialState: {
+    tasks: [],
+    loading: false,
+    error: null,
   },
-    extraReducers: (builder) => {
-        builder
-            // Fetch Tasks
-            .addCase(fetchTasks.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(fetchTasks.fulfilled, (state, action) => {
-                state.loading = false;
-                state.tasks = action.payload;
-            })
-            .addCase(fetchTasks.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload || 'Failed to load tasks';
-            })
-
-            // Create Task
-            .addCase(createTask.fulfilled, (state, action) => {
-                state.tasks.unshift(action.payload);
-            })
-
-            // Update Status (drag-and-drop)
-            .addCase(updateTaskStatus.fulfilled, (state, action) => {
-                const { taskId, newStatus } = action.payload;
-                const task = state.tasks.find(t => t.id === taskId);
-                if (task) {
-                    task.status = newStatus;
-                    task.activityLogs.push({
-                        action: `moved to ${newStatus}`,
-                        user: 'Current User',
-                        timestamp: new Date().toISOString(),
-                    });
-                }
-            })
-
-            // Full Update (edit modal)
-            .addCase(updateTask.fulfilled, (state, action) => {
-                const { id, updates } = action.payload;
-                const task = state.tasks.find(t => t.id === id);
-                if (task) {
-                    Object.assign(task, updates);
-                    task.activityLogs.push({
-                        action: 'updated task',
-                        user: 'Current User',
-                        timestamp: new Date().toISOString(),
-                    });
-                }
-                if (state.currentTask?.id === id) {
-                    state.currentTask = { ...state.currentTask, ...updates };
-                }
-            })
-
-            // Add Comment – SINGLE HANDLER ONLY
-            .addCase(addCommentToTask.fulfilled, (state, action) => {
-                const { taskId, comment } = action.payload;
-                const task = state.tasks.find(t => t.id === taskId);
-                if (task) {
-                    task.comments = task.comments || [];
-                    task.comments.push(comment);
-
-                    // Add to activity log
-                    task.activityLogs.push({
-                        action: `added comment: "${comment.text}"`,
-                        user: comment.user,
-                        timestamp: comment.timestamp,
-                    });
-                }
-            })
-      // Personal Tasks
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchTasks.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchTasks.fulfilled, (state, action) => {
+        state.loading = false;
+        state.tasks = action.payload;
+      })
+      // Personal tasks
       .addCase(fetchPersonalTasks.pending, (state) => {
         state.loading = true;
-        state.error = null;
       })
       .addCase(fetchPersonalTasks.fulfilled, (state, action) => {
         state.loading = false;
-        state.tasks = action.payload; // mockPersonalTasks
+        state.tasks = action.payload;
       })
       .addCase(fetchPersonalTasks.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || 'Failed to load personal tasks';
+        state.error = action.payload;
       })
-            
-    },
+      .addCase(createTask.fulfilled, (state, action) => {
+        state.tasks.unshift(action.payload);
+      });
+      // add comment
+      builder.addCase(addCommentToTask.fulfilled, (state, action) => {
+        const { taskId, comment } = action.payload;
+        const task = state.tasks.find((t) => t.id === taskId);
+        if (task) {
+          task.comments = task.comments || [];
+          task.comments.push(comment);
+        }
+      });
+      // update task
+      builder.addCase(updateTaskStatus.fulfilled, (state, action) => {
+        const updated = action.payload;
+        const idx = state.tasks.findIndex((t) => t.id === updated.id);
+        if (idx !== -1) state.tasks[idx] = updated;
+      });
+  },
 });
-
-export const {
-  setCurrentTask,
-  clearCurrentTask,
-  setFilters,
-  clearFilters,
-} = taskSlice.actions;
 
 export default taskSlice.reducer;

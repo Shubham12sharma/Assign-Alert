@@ -15,12 +15,16 @@ import AdminDashboard from "../pages/admin/AdminDashboard";
 import LandingPage from "../pages/LandingPage";
 
 export default function AppRoutes() {
+
+    const RootRedirect = () => {
+        const token = localStorage.getItem('access_token');
+        return token ? <Navigate to="/dashboard" replace /> : <Navigate to="/landing" replace />;
+    };
+
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/landing" element={<LandingPage />} />
-                {/* Public Routes */}
+                <Route path="" element={<LandingPage />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
 
@@ -116,8 +120,8 @@ export default function AppRoutes() {
                 />
 
                 {/* Default Route */}
+                <Route path="/" element={<RootRedirect />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>
         </BrowserRouter>
     );

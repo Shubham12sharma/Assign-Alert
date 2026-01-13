@@ -1,92 +1,47 @@
-// src/store/communitySlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import api from '../api/api';
 
-// Async thunk for fetching communities (replace with real API later)
-export const fetchCommunities = createAsyncThunk(
-    'community/fetchCommunities',
-    async (_, { rejectWithValue }) => {
-        try {
-            // TODO: Replace with real API call to Django backend
-            // const response = await api.get('/api/communities/');
-            // return response.data;
+// Simple 24-character hex mongo_id generator (for frontend)
+function generateMongoId() {
+    return Array.from({ length: 24 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+}
 
-            // Mock delay to simulate API
-            await new Promise(resolve => setTimeout(resolve, 500));
+export const fetchCommunities = createAsyncThunk('community/fetchAll', async () => {
+    const response = await api.get('/communities/');
+    return response.data;
+});
 
-            // Realistic mock data based on your PDF structure
-            return mockCommunitiesData;
-        } catch (error) {
-            return rejectWithValue(error.message);
-        }
+export const createCommunity = createAsyncThunk('community/create', async (communityData, { rejectWithValue }) => {
+    try {
+        // Generate mongo_id if not provided
+        const mongoId = communityData.mongo_id || generateMongoId();
+
+        const payload = {
+            mongo_id: mongoId,
+            name: communityData.name,
+            parent: communityData.parent || null,
+            members: communityData.members || [],
+            member_count: communityData.member_count || 0,
+        };
+
+        const response = await api.post('/communities/', payload);
+        return response.data;  // Includes the created community's mongo_id
+    } catch (error) {
+        return rejectWithValue(error.response?.data || error.message);
     }
-);
-
-// Mock hierarchical data (Main Community + Sub-communities)
-const mockCommunitiesData = [
-    {
-        id: 'main-1',
-        name: 'Acme Corporation',
-        type: 'main',
-        description: 'Headquarters - Main Organization',
-        memberCount: 156,
-        createdAt: '2024-01-15',
-        isMain: true,
-        subCommunities: [
-            {
-                id: 'branch-1',
-                name: 'Mumbai Branch',
-                type: 'branch',
-                description: 'Regional office in Mumbai',
-                memberCount: 48,
-                createdAt: '2024-03-20',
-                subCommunities: [
-                    { id: 'team-1', name: 'Engineering Team', type: 'team', memberCount: 22 },
-                    { id: 'team-2', name: 'Sales Team', type: 'team', memberCount: 15 },
-                    { id: 'team-3', name: 'Design Team', type: 'team', memberCount: 11 },
-                ],
-            },
-            {
-                id: 'branch-2',
-                name: 'Delhi Branch',
-                type: 'branch',
-                description: 'Regional office in Delhi',
-                memberCount: 62,
-                createdAt: '2024-04-10',
-                subCommunities: [
-                    { id: 'team-4', name: 'Product Team', type: 'team', memberCount: 18 },
-                    { id: 'team-5', name: 'Marketing Team', type: 'team', memberCount: 14 },
-                    { id: 'team-6', name: 'HR & Operations', type: 'team', memberCount: 30 },
-                ],
-            },
-            {
-                id: 'dept-1',
-                name: 'Central IT Department',
-                type: 'department',
-                description: 'Cross-branch IT support',
-                memberCount: 20,
-                createdAt: '2024-02-01',
-                subCommunities: [],
-            },
-        ],
-    },
-];
-
-const initialState = {
-    communities: [],           // All loaded communities (usually just the main one + subs)
-    currentCommunity: null,    // Selected/active community
-    loading: false,
-    error: null,
-};
+});
 
 const communitySlice = createSlice({
     name: 'community',
-    initialState,
+    initialState: {
+        communities: [],
+        currentCommunity: null,
+        loading: false,
+        error: null,  // Added for error handling
+    },
     reducers: {
         setCurrentCommunity: (state, action) => {
             state.currentCommunity = action.payload;
-        },
-        clearCurrentCommunity: (state) => {
-            state.currentCommunity = null;
         },
     },
     extraReducers: (builder) => {
@@ -98,16 +53,26 @@ const communitySlice = createSlice({
             .addCase(fetchCommunities.fulfilled, (state, action) => {
                 state.loading = false;
                 state.communities = action.payload;
-                // Auto-select main community if exists
-                state.currentCommunity = action.payload.find(c => c.isMain) || action.payload[0] || null;
             })
             .addCase(fetchCommunities.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload || 'Failed to load communities';
+                state.error = action.payload;
+            })
+            .addCase(createCommunity.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(createCommunity.fulfilled, (state, action) => {
+                state.loading = false;
+                state.communities.push(action.payload);  // Add new community to list
+                state.currentCommunity = action.payload.mongo_id;  // Optional: set as current
+            })
+            .addCase(createCommunity.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;  // e.g. mongo_id required error
             });
     },
 });
 
-export const { setCurrentCommunity, clearCurrentCommunity } = communitySlice.actions;
-
+export const { setCurrentCommunity } = communitySlice.actions;
 export default communitySlice.reducer;

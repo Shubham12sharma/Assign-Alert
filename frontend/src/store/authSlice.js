@@ -1,101 +1,89 @@
-// src/store/authSlice.js
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-
-// Full mock users with different roles
-const mockUsers = [
-    {
-        id: 'super1',
-        name: 'Shubham Sharma',
-        email: 'shubham@assignalert.com',
-        role: 'Super Admin',
-        communities: ['main-1', 'branch-1', 'branch-2'],
-    },
-    {
-        id: 'admin1',
-        name: 'Jane Smith',
-        email: 'jane@mumbai.assignalert.com',
-        role: 'Admin',
-        communities: ['branch-1'],
-    },
-    {
-        id: 'member1',
-        name: 'John Doe',
-        email: 'john@engineering.assignalert.com',
-        role: 'Member',
-        communities: ['branch-1'],
-    },
-    {
-        id: 'guest1',
-        name: 'Guest User',
-        email: 'guest@example.com',
-        role: 'Guest',
-        communities: ['branch-1'],
-    },
-];
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import api from "../api/api";
 
 export const loginUser = createAsyncThunk(
-    'auth/loginUser',
-    async ({ email }, { rejectWithValue }) => {
-        try {
-            await new Promise(resolve => setTimeout(resolve, 800));
-
-            const user = mockUsers.find(
-                u => u.email.toLowerCase() === email.toLowerCase()
-            );
-
-            if (!user) {
-                return rejectWithValue('Invalid email');
-            }
-
-            return user;
-        } catch (error) {
-            return rejectWithValue('Login failed');
-        }
+    "auth/login",
+    async (credentials) => {
+        const res = await api.post("/token/", credentials);
+        return res.data;
     }
 );
 
+// Provide a compatibility alias `login` because some components import { login }
+export const login = loginUser;
 
-
-const initialState = {
-    user: null,
-    isAuthenticated: false,
-    loading: false,
-    error: null,
-    mode: 'corporate', 
-};
+/* ------------------ /me/ ------------------ */
+export const fetchCurrentUser = createAsyncThunk(
+    "auth/me",
+    async () => {
+        const res = await api.get("/me/");
+        return res.data;
+    }
+);
 
 const authSlice = createSlice({
-    name: 'auth',
-    initialState,
+    name: "auth",
+    initialState: {
+        tokens: null,
+        user: null,
+        isAuthenticated: false,
+        loading: false,
+        mode: "personal",
+    },
+
     reducers: {
-        logout: (state) => {
+        logout(state) {
+            state.tokens = null;
             state.user = null;
             state.isAuthenticated = false;
         },
-        setPersonalMode: (state) => {
-            state.mode = 'personal';
-        },
-        setCorporateMode: (state) => {
-            state.mode = 'corporate';
-        },
     },
+
     extraReducers: (builder) => {
         builder
+
+            /* ---------- LOGIN ---------- */
             .addCase(loginUser.pending, (state) => {
                 state.loading = true;
-                state.error = null;
             })
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.loading = false;
-                state.user = action.payload;
-                state.isAuthenticated = true;
+
+                // Support both response shapes: { tokens: {...}, user: {...} } or { access, refresh }
+                const tokens = action.payload.tokens || action.payload;
+
+                state.tokens = tokens;
+
+                // Normalize user object and ensure communities is always an array
+                const user = action.payload.user || null;
+                state.user = user
+                    ? { ...user, communities: user.communities || [] }
+                    : null;
+
+                state.isAuthenticated = !!state.user;
+
+                // Persist tokens to localStorage so other parts of the app (api interceptors, routing)
+                // can read them immediately after login
+                if (tokens?.access) localStorage.setItem('access_token', tokens.access);
+                if (tokens?.refresh) localStorage.setItem('refresh_token', tokens.refresh);
+
+                // Default mode decision
+                state.mode = (state.user?.communities?.length > 0) ? "community" : "personal";
             })
-            .addCase(loginUser.rejected, (state, action) => {
+            .addCase(loginUser.rejected, (state) => {
                 state.loading = false;
-                state.error = action.payload || 'Login failed';
+            })
+
+            /* ---------- /me/ ---------- */
+            .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+                // 🔴 DO NOT OVERWRITE EXISTING USER
+                state.user = {
+                    ...state.user,
+                    ...action.payload,
+                };
             });
     },
 });
 
-export const { logout, setPersonalMode, setCorporateMode } = authSlice.actions;
+export const { logout } = authSlice.actions;
 export default authSlice.reducer;

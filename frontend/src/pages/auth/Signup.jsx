@@ -1,14 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { loginUser } from '../../store/authSlice';
 import { FiArrowRight, FiCheckCircle, FiMail, FiLock, FiUser, FiBriefcase, FiUsers } from 'react-icons/fi';
+import api from '../../api/api';
+
+// Simple 24-char hex mongo_id generator
+const generateMongoId = () => Array.from({ length: 24 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 
 export default function Signup() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const [step, setStep] = useState(1); // 1: credentials, 2: organization choice
+    const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -18,8 +22,16 @@ export default function Signup() {
         password: '',
         organizationName: '',
         inviteCode: '',
-        choice: '', // 'create' or 'join'
+        choice: '',
     });
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('invite');
+        if (code) {
+            setForm(prev => ({ ...prev, inviteCode: code, choice: 'join' }));
+        }
+    }, []);
 
     const handleNext = () => {
         if (step === 1) {
@@ -33,35 +45,67 @@ export default function Signup() {
         }
     };
 
-    // If invite code in URL
-    useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('invite');
-        if (code) {
-            setForm({ ...form, inviteCode: code, choice: 'join' });
-        }
-    }, []);
-
     const handleSignup = async () => {
         setLoading(true);
         setError('');
 
         try {
-            // Mock API call
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            // In real app: dispatch(registerUser(form))
-
-            // Success → go to dashboard
-            navigate('/dashboard', {
-                state: {
-                    message: form.choice === 'create'
-                        ? `Welcome! Your organization "${form.organizationName}" is ready.`
-                        : 'Welcome! You\'ve joined the team.'
-                }
+            // 1. Create User
+            await api.post('/users/', {
+                username: form.email,
+                email: form.email,
+                password: form.password,
+                name: form.name,
+                role: form.choice === 'create' ? 'Super Admin' : 'Member',
             });
+
+            // 2. Login immediately
+            const loginResult = await dispatch(
+                loginUser({
+                    username: form.email,
+                    password: form.password,
+                })
+            ).unwrap();
+
+            const accessToken = loginResult.access;
+            api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+
+            // 3. If creating organization → create MAIN community
+            let mainCommunityId = null;
+
+            if (form.choice === 'create' && form.organizationName) {
+                const mongoId = generateMongoId(); // Auto-generate
+
+                const communityRes = await api.post('/communities/', {
+                    mongo_id: mongoId,
+                    name: form.organizationName, // Organization name = Main Community
+                    parent: null,
+                    members: [],
+                    member_count: 0,
+                });
+
+                mainCommunityId = communityRes.data.mongo_id;
+            }
+
+            // 4. Update user communities (add main community if created)
+            if (mainCommunityId) {
+                await api.patch('/me/', {
+                    communities: [mainCommunityId],
+                });
+            }
+
+            // 5. Navigate to dashboard
+            navigate('/dashboard', {
+                state: { message: 'Welcome! Your account and main community are ready.' },
+            });
+
         } catch (err) {
-            setError('Signup failed. Please try again.');
+            setError(
+                err.response?.data?.detail ||
+                err.response?.data?.mongo_id?.[0] ||  // Specific mongo_id error
+                err.message ||
+                'Signup failed. Please try again.'
+            );
         } finally {
             setLoading(false);
         }
@@ -160,8 +204,8 @@ export default function Signup() {
                                 <div
                                     onClick={() => setForm({ ...form, choice: 'create' })}
                                     className={`cursor-pointer rounded-3xl p-10 border-4 transition-all text-center ${form.choice === 'create'
-                                            ? 'border-indigo-600 bg-indigo-50 shadow-2xl'
-                                            : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-xl'
+                                        ? 'border-indigo-600 bg-indigo-50 shadow-2xl'
+                                        : 'border-gray-200 bg-white hover:border-indigo-300 hover:shadow-xl'
                                         }`}
                                 >
                                     <FiBriefcase className="text-6xl text-indigo-600 mx-auto mb-6" />
@@ -172,7 +216,7 @@ export default function Signup() {
                                     {form.choice === 'create' && (
                                         <input
                                             type="text"
-                                            placeholder="Organization Name"
+                                            placeholder="Organization Name (will be your Main Community)"
                                             value={form.organizationName}
                                             onChange={(e) => setForm({ ...form, organizationName: e.target.value })}
                                             className="w-full px-6 py-4 rounded-xl border border-indigo-300 focus:ring-4 focus:ring-indigo-200 mt-4 text-lg"
@@ -185,8 +229,8 @@ export default function Signup() {
                                 <div
                                     onClick={() => setForm({ ...form, choice: 'join' })}
                                     className={`cursor-pointer rounded-3xl p-10 border-4 transition-all text-center ${form.choice === 'join'
-                                            ? 'border-purple-600 bg-purple-50 shadow-2xl'
-                                            : 'border-gray-200 bg-white hover:border-purple-300 hover:shadow-xl'
+                                        ? 'border-purple-600 bg-purple-50 shadow-2xl'
+                                        : 'border-gray-200 bg-white hover:border-purple-300 hover:shadow-xl'
                                         }`}
                                 >
                                     <FiUsers className="text-6xl text-purple-600 mx-auto mb-6" />

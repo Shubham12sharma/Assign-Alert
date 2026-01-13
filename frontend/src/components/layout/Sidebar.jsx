@@ -51,36 +51,36 @@ export default function Sidebar() {
                         ) : (
                             <ul className="space-y-1">
                                 {communities.map((comm) => (
-                                    <li key={comm.id}>
+                                    <li key={comm.mongo_id}>
                                         <Link
-                                            to={`/community/${comm.id}`}
+                                            to={`/community/${comm.mongo_id}`}
                                             onClick={() => handleCommunityClick(comm)}
-                                            className={`flex items-center p-3 rounded-lg transition font-medium ${currentCommunity?.id === comm.id
-                                                    ? 'bg-indigo-100 text-indigo-700 shadow-sm'
-                                                    : 'text-gray-700 hover:bg-indigo-50'
+                                            className={`flex items-center p-3 rounded-lg transition font-medium ${currentCommunity?.mongo_id === comm.mongo_id
+                                                ? 'bg-indigo-100 text-indigo-700 shadow-sm'
+                                                : 'text-gray-700 hover:bg-indigo-50'
                                                 }`}
                                         >
                                             <FiUsers className="mr-3 text-lg" />
                                             <div className="flex-1">
                                                 <div>{comm.name}</div>
-                                                <div className="text-xs text-gray-500">{comm.memberCount} members</div>
+                                                <div className="text-xs text-gray-500">{comm.member_count} members</div>
                                             </div>
                                         </Link>
 
                                         {comm.subCommunities && comm.subCommunities.length > 0 && (
                                             <ul className="ml-10 mt-2 space-y-1">
                                                 {comm.subCommunities.map((sub) => (
-                                                    <li key={sub.id}>
+                                                    <li key={sub.mongo_id}>
                                                         <Link
-                                                            to={`/community/${sub.id}`}
+                                                            to={`/community/${sub.mongo_id}`}
                                                             onClick={() => handleCommunityClick(sub)}
-                                                            className={`flex items-center p-2 text-sm rounded transition ${currentCommunity?.id === sub.id
-                                                                    ? 'text-indigo-700 font-medium'
-                                                                    : 'text-gray-600 hover:text-gray-900'
+                                                            className={`flex items-center p-2 text-sm rounded transition ${currentCommunity?.mongo_id === sub.mongo_id
+                                                                ? 'text-indigo-700 font-medium'
+                                                                : 'text-gray-600 hover:text-gray-900'
                                                                 }`}
                                                         >
                                                             ↳ {sub.name}
-                                                            <span className="ml-auto text-xs text-gray-400">{sub.memberCount}</span>
+                                                            <span className="ml-auto text-xs text-gray-400">{sub.member_count}</span>
                                                         </Link>
                                                     </li>
                                                 ))}

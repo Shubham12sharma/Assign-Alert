@@ -1,38 +1,41 @@
 // src/store/inviteSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-
-const mockInvites = [];
+import api from '../api/api';
 
 export const generateInvite = createAsyncThunk(
     'invite/generate',
-    async ({ communityId, role = 'Member' }, { getState }) => {
-        await new Promise(resolve => setTimeout(resolve, 800));
-        const code = Math.random().toString(36).substring(2, 10).toUpperCase();
-        const invite = {
-            id: Date.now().toString(),
-            code,
-            communityId,
+    async ({ communityId, role = 'Member' }) => {
+        // Your backend should have an endpoint for this
+        const response = await api.post('/communities/generate-invite/', {
+            community: communityId,
             role,
-            createdBy: getState().auth.user.name,
-            createdAt: new Date().toISOString(),
-            used: false,
-        };
-        mockInvites.push(invite);
-        return invite;
+        });
+        return response.data;
+    }
+);
+
+export const fetchPendingInvites = createAsyncThunk(
+    'invite/fetchPending',
+    async () => {
+        const response = await api.get('/invites/pending/');
+        return response.data;
     }
 );
 
 const inviteSlice = createSlice({
     name: 'invite',
-    initialState: { invites: mockInvites, loading: false },
+    initialState: {
+        invites: [],
+        pendingInvites: [],
+        loading: false,
+    },
     extraReducers: (builder) => {
         builder
-            .addCase(generateInvite.pending, (state) => {
-                state.loading = true;
-            })
             .addCase(generateInvite.fulfilled, (state, action) => {
-                state.loading = false;
                 state.invites.push(action.payload);
+            })
+            .addCase(fetchPendingInvites.fulfilled, (state, action) => {
+                state.pendingInvites = action.payload;
             });
     },
 });

@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiBell } from 'react-icons/fi';
 import NotificationBell from './NotificationBell';
-import { setPersonalMode, setCorporateMode } from '../../store/authSlice';
+import * as authActions from '../../store/authSlice';
 
 export default function Topbar() {
     const dispatch = useDispatch();
@@ -11,10 +11,10 @@ export default function Topbar() {
 
     const toggleMode = () => {
         if (mode === 'personal') {
-            dispatch(setCorporateMode());
+            dispatch(authActions.setCorporateMode());
             navigate('/dashboard');
         } else {
-            dispatch(setPersonalMode());
+            dispatch(authActions.setPersonalMode());
             navigate('/dashboard/personal');
         }
     };
@@ -52,10 +52,10 @@ export default function Topbar() {
                 {/* User Profile */}
                 <div className="flex items-center gap-4">
                     <div className="w-11 h-11 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
-                        {user?.name?.[0]?.toUpperCase() || 'U'}
+                        {(user?.name || user?.username || user?.email)?.[0]?.toUpperCase() || 'U'}
                     </div>
                     <div>
-                        <p className="font-semibold text-gray-900">{user?.name || 'User'}</p>
+                        <p className="font-semibold text-gray-900">{user?.name || user?.username || user?.email || 'User'}</p>
                         <p className="text-sm text-gray-500 capitalize">{user?.role || 'Member'}</p>
                     </div>
                 </div>

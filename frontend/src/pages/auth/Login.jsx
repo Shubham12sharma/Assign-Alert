@@ -1,79 +1,79 @@
 import { useState } from "react";
-import { useDispatch } from "react-redux"; // ← Add this
+import { useDispatch } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
-import { loginUser } from "../../store/authSlice"; // ← Add import
+import { loginUser } from "../../store/authSlice";
 
 export default function Login() {
-    const dispatch = useDispatch(); // ← Add this
+    const dispatch = useDispatch();
     const navigate = useNavigate();
+
     const [form, setForm] = useState({ email: "", password: "" });
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(''); // ← FIXED: Add error state
+    const [error, setError] = useState("");
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(''); // Clear previous error
+        setError("");
         setLoading(true);
 
-        const result = await dispatch(loginUser({ email: form.email }));
+        const result = await dispatch(
+            loginUser({
+                username: form.email, // JWT expects "username"
+                password: form.password,
+            })
+        );
 
         if (loginUser.fulfilled.match(result)) {
             const user = result.payload;
-            // Super Admin or Admin go to /admin, others to /dashboard
-            if (user.role === 'Super Admin' || user.role === 'Admin') {
-                navigate('/admin');
+            if (user?.role === "Super Admin" || user?.role === "Admin") {
+                navigate("/admin");
             } else {
-                navigate('/dashboard');
+                navigate("/dashboard");
             }
         } else {
-            setError(result.payload || 'Invalid email. Try shubham@assignalert.com');
+            setError(result.payload?.detail || "Invalid credentials");
         }
 
         setLoading(false);
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center px-4 py-12">
             <div className="max-w-md w-full">
-                <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-indigo-900">Assign Alert</h1>
-                    <p className="mt-4 text-xl text-gray-700">Welcome back! Sign in to continue</p>
+                <div className="text-center mb-10">
+                    <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-4">
+                        Assign Alert
+                    </h1>
+                    <p className="text-xl text-gray-700">Welcome back! Sign in to continue</p>
                 </div>
 
-                <div className="bg-white shadow-2xl rounded-3xl p-10 border border-gray-100">
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl p-10 border border-gray-100">
+                    <form onSubmit={handleSubmit} className="space-y-7">
                         <div>
-                            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                                Email Address
-                            </label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
                             <input
-                                id="email"
                                 type="email"
                                 required
                                 value={form.email}
                                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                                className="w-full px-5 py-4 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-600 transition"
+                                className="w-full px-6 py-4 rounded-xl border border-gray-300 focus:ring-4 focus:ring-indigo-200 focus:border-indigo-600 text-lg"
                                 placeholder="shubham@assignalert.com"
                             />
                         </div>
 
-                        {/* Password field kept but not used (for future real auth) */}
                         <div>
-                            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-                                Password 
-                            </label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
                             <input
-                                id="password"
                                 type="password"
+                                required
                                 value={form.password}
                                 onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                className="w-full px-5 py-4 border border-gray-300 rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-600 transition"
-                                placeholder="Any password works"
+                                className="w-full px-6 py-4 rounded-xl border border-gray-300 focus:ring-4 focus:ring-indigo-200 focus:border-indigo-600 text-lg"
                             />
                         </div>
 
                         {error && (
-                            <div className="bg-red-50 text-red-700 px-5 py-3 rounded-xl text-sm">
+                            <div className="bg-red-50 text-red-700 px-6 py-4 rounded-xl text-center font-medium">
                                 {error}
                             </div>
                         )}
@@ -81,26 +81,18 @@ export default function Login() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold py-4 rounded-xl shadow-lg transition duration-200"
+                            className="w-full py-5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xl font-bold rounded-2xl shadow-2xl disabled:opacity-70"
                         >
                             {loading ? "Signing in..." : "Sign In"}
                         </button>
                     </form>
 
-                    <p className="mt-8 text-center text-sm text-gray-600">
+                    <p className="mt-10 text-center text-gray-600">
                         Don't have an account?{" "}
-                        <Link to="/signup" className="font-semibold text-indigo-600 hover:text-indigo-700">
+                        <Link to="/signup" className="font-bold text-indigo-600 hover:underline">
                             Sign up
                         </Link>
                     </p>
-
-                    {/* <div className="mt-8 text-center text-xs text-gray-500">
-                        <p className="font-medium mb-2">Test Accounts:</p>
-                        <p>Super Admin: shubham@assignalert.com</p>
-                        <p>Admin: jane@mumbai.assignalert.com</p>
-                        <p>Member: john@engineering.assignalert.com</p>
-                        <p>Guest: guest@example.com</p>
-                    </div> */}
                 </div>
             </div>
         </div>
