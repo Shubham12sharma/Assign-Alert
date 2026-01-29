@@ -1,11 +1,13 @@
-import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
-import { loginUser } from "../../store/authSlice";
+import { loginUser, fetchCurrentUser } from "../../store/authSlice";
 
 export default function Login() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+
+    const { user, isAuthenticated } = useSelector(state => state.auth);
 
     const [form, setForm] = useState({ email: "", password: "" });
     const [loading, setLoading] = useState(false);
@@ -18,24 +20,31 @@ export default function Login() {
 
         const result = await dispatch(
             loginUser({
-                username: form.email, // JWT expects "username"
+                username: form.email,
                 password: form.password,
             })
         );
 
         if (loginUser.fulfilled.match(result)) {
-            const user = result.payload;
-            if (user?.role === "Super Admin" || user?.role === "Admin") {
-                navigate("/admin");
-            } else {
-                navigate("/dashboard");
-            }
+            dispatch(fetchCurrentUser());
         } else {
             setError(result.payload?.detail || "Invalid credentials");
         }
 
         setLoading(false);
     };
+
+    // 🔑 AUTO REDIRECT AFTER LOGIN
+    useEffect(() => {
+        if (isAuthenticated && user) {
+            if (user.role === "Super Admin" || user.role === "Admin") {
+                navigate("/admin", { replace: true });
+            } else {
+                navigate("/dashboard", { replace: true });
+            }
+        }
+    }, [isAuthenticated, user, navigate]);
+
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center px-4 py-12">

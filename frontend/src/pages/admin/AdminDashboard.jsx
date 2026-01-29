@@ -38,8 +38,9 @@ export default function AdminDashboard() {
             <InviteModal
                 isOpen={isInviteModalOpen}
                 onClose={() => setIsInviteModalOpen(false)}
-                communityId={currentCommunity?.id}
+                communityId={currentCommunity?.mongo_id}
             />
+
 
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">

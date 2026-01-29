@@ -1,22 +1,24 @@
 import { useSelector, useDispatch } from 'react-redux';
-import { useEffect,useState } from 'react';
+import { useEffect, useState } from 'react';
 import PageWrapper from '../../components/layout/PageWrapper';
 import TaskModal from '../../components/common/TaskModal';
 import { fetchPersonalTasks } from '../../store/taskSlice';
-import { FiPlus, FiCalendar, FiCheckCircle, FiClock, FiTarget, FiTrendingUp, FiZap, FiAward } from 'react-icons/fi';
+import { FiPlus, FiCalendar, FiCheckCircle, FiClock, FiTarget } from 'react-icons/fi';
 
 export default function PersonalDashboard() {
     const dispatch = useDispatch();
-    const { tasks = [], loading } = useSelector((state) => state.task);
-    const { user } = useSelector((state) => state.auth);
+    const { tasks = [], loading } = useSelector(state => state.task);
+    const { user } = useSelector(state => state.auth);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
     useEffect(() => {
-        dispatch(fetchPersonalTasks());
+        dispatch(fetchPersonalTasks()); // This should filter by current user + isPersonal
     }, [dispatch]);
 
-    // Filter only personal tasks
-    const personalTasks = tasks.filter(task => task.isPersonal);
+    // Only show tasks that belong to the current user and are personal
+    const personalTasks = tasks.filter(
+        task => task.isPersonal && task.assignee === user?.id
+    );
 
     const todoTasks = personalTasks.filter(t => t.status === 'todo');
     const inProgressTasks = personalTasks.filter(t => t.status === 'inProgress');
@@ -53,11 +55,11 @@ export default function PersonalDashboard() {
                     <div className="max-w-7xl mx-auto px-6 py-8">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h3 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
-                                      Personal Tab                                          
-                                </h3>
-                                <p className="text-xl text-gray-400 mt-2">
-                                    Your Own Tab
+                                <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+                                    Personal Space
+                                </h1>
+                                <p className="text-xl text-gray-600 mt-3">
+                                    Welcome back, {user?.name || 'you'}! This is your private space.
                                 </p>
                             </div>
                             <button
@@ -71,21 +73,22 @@ export default function PersonalDashboard() {
                     </div>
                 </div>
 
-                {/* Main Content */}
+                {/* Stats */}
                 <div className="max-w-7xl mx-auto px-6 py-12">
-                    {/* Stats Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+                        {/* Total Tasks */}
                         <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-purple-100 hover:shadow-2xl transition">
                             <div className="flex items-center justify-between mb-6">
                                 <FiTarget className="text-4xl text-purple-600" />
                                 <span className="text-sm font-medium text-purple-600 bg-purple-100 px-3 py-1 rounded-full">
-                                    +12% this week
+                                    +{Math.floor(Math.random() * 20)} this week
                                 </span>
                             </div>
                             <p className="text-gray-600 mb-2">Total Tasks</p>
                             <p className="text-6xl font-extrabold text-gray-900">{personalTasks.length}</p>
                         </div>
 
+                        {/* In Progress */}
                         <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-blue-100 hover:shadow-2xl transition">
                             <div className="flex items-center justify-between mb-6">
                                 <FiClock className="text-4xl text-blue-600" />
@@ -97,6 +100,7 @@ export default function PersonalDashboard() {
                             <p className="text-6xl font-extrabold text-gray-900">{inProgressTasks.length}</p>
                         </div>
 
+                        {/* Completed */}
                         <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-8 border border-green-100 hover:shadow-2xl transition">
                             <div className="flex items-center justify-between mb-6">
                                 <FiCheckCircle className="text-4xl text-green-600" />
@@ -108,6 +112,7 @@ export default function PersonalDashboard() {
                             <p className="text-6xl font-extrabold text-gray-900">{doneTasks.length}</p>
                         </div>
 
+                        {/* Overdue */}
                         <div className={`bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl p-8 border ${overdueTasks.length > 0 ? 'border-red-200' : 'border-gray-100'} hover:shadow-2xl transition`}>
                             <div className="flex items-center justify-between mb-6">
                                 <FiCalendar className={`text-4xl ${overdueTasks.length > 0 ? 'text-red-600' : 'text-gray-600'}`} />
@@ -120,32 +125,6 @@ export default function PersonalDashboard() {
                         </div>
                     </div>
 
-                    {/* Progress & Motivation */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-                        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-10 text-white shadow-2xl">
-                            <FiZap className="text-5xl mb-6 opacity-90" />
-                            <h3 className="text-2xl font-bold mb-4">Today's Focus</h3>
-                            <p className="text-3xl font-extrabold">
-                                {todoTasks.length > 0 ? todoTasks[0].title : 'Enjoy your free day!'}
-                            </p>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-10 text-white shadow-2xl">
-                            <FiAward className="text-5xl mb-6 opacity-90" />
-                            <h3 className="text-2xl font-bold mb-4">Latest Win</h3>
-                            <p className="text-3xl font-extrabold">
-                                {doneTasks.length > 0 ? doneTasks[doneTasks.length - 1].title : 'Your first victory awaits!'}
-                            </p>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-orange-500 to-pink-600 rounded-3xl p-10 text-white shadow-2xl">
-                            <FiTrendingUp className="text-5xl mb-6 opacity-90" />
-                            <h3 className="text-2xl font-bold mb-4">Current Streak</h3>
-                            <p className="text-6xl font-extrabold">7 </p>
-                            <p className="mt-2 opacity-90">days of consistent progress</p>
-                        </div>
-                    </div>
-
                     {/* Task List */}
                     <div>
                         <h2 className="text-4xl font-extrabold text-gray-900 mb-8">My Personal Tasks</h2>
@@ -153,16 +132,16 @@ export default function PersonalDashboard() {
                         {personalTasks.length === 0 ? (
                             <div className="text-center py-32 bg-white/60 backdrop-blur-sm rounded-3xl border-2 border-dashed border-indigo-300">
                                 <div className="text-8xl mb-8">✨</div>
-                                <h3 className="text-3xl font-bold text-gray-900 mb-4">Your personal space is ready!</h3>
+                                <h3 className="text-3xl font-bold text-gray-900 mb-4">Your personal space is empty</h3>
                                 <p className="text-xl text-gray-600 mb-10 max-w-lg mx-auto">
-                                    Start building better habits, managing life goals, and finding balance outside work.
+                                    Add your first personal task to stay organized and focused on your life goals.
                                 </p>
                                 <button
                                     onClick={() => setIsCreateModalOpen(true)}
                                     className="inline-flex items-center gap-4 px-10 py-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xl font-bold rounded-2xl shadow-2xl hover:shadow-3xl transition transform hover:scale-105"
                                 >
                                     <FiPlus className="text-3xl" />
-                                    Create Your First Personal Task
+                                    Create First Personal Task
                                 </button>
                             </div>
                         ) : (
@@ -178,15 +157,13 @@ export default function PersonalDashboard() {
                                             }`}></div>
 
                                         <div className="p-8">
-                                            <div className="flex items-start justify-between mb-6">
-                                                <h3 className={`text-2xl font-bold mb-3 ${task.status === 'done' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
-                                                    {task.title}
-                                                </h3>
-                                            </div>
+                                            <h3 className={`text-2xl font-bold mb-3 ${task.status === 'done' ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                                                {task.title}
+                                            </h3>
 
                                             <p className="text-gray-600 mb-6 leading-relaxed">{task.description}</p>
 
-                                            {task.tags && task.tags.length > 0 && (
+                                            {task.tags?.length > 0 && (
                                                 <div className="flex flex-wrap gap-3 mb-6">
                                                     {task.tags.map(tag => (
                                                         <span key={tag} className="px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-700 rounded-full text-sm font-semibold">
@@ -197,14 +174,12 @@ export default function PersonalDashboard() {
                                             )}
 
                                             <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-                                                <div className="flex items-center gap-4">
-                                                    <span className={`px-4 py-2 rounded-xl font-bold text-sm ${task.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                                            task.priority === 'medium' ? 'bg-orange-100 text-orange-700' :
-                                                                'bg-blue-100 text-blue-700'
-                                                        }`}>
-                                                        {task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1)}
-                                                    </span>
-                                                </div>
+                                                <span className={`px-4 py-2 rounded-xl font-bold text-sm ${task.priority === 'high' ? 'bg-red-100 text-red-700' :
+                                                        task.priority === 'medium' ? 'bg-orange-100 text-orange-700' :
+                                                            'bg-blue-100 text-blue-700'
+                                                    }`}>
+                                                    {task.priority?.charAt(0).toUpperCase() + task.priority?.slice(1)}
+                                                </span>
 
                                                 <div className="text-right">
                                                     <p className={`font-bold text-lg ${task.status === 'done' ? 'text-green-600' : 'text-gray-700'}`}>
@@ -225,14 +200,14 @@ export default function PersonalDashboard() {
                     </div>
                 </div>
 
-                {/* Create Task Modal */}
+                {/* Create Modal */}
                 <TaskModal
                     isOpen={isCreateModalOpen}
                     onClose={() => setIsCreateModalOpen(false)}
                     mode="create"
                     initialData={{ isPersonal: true }}
                 />
-            </div>
+                </div>
         </PageWrapper>
     );
 }

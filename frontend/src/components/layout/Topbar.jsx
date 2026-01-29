@@ -2,7 +2,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiBell } from 'react-icons/fi';
 import NotificationBell from './NotificationBell';
-import * as authActions from '../../store/authSlice';
+import { setPersonalMode, setCorporateMode } from '../../store/authSlice';
 
 export default function Topbar() {
     const dispatch = useDispatch();
@@ -11,10 +11,10 @@ export default function Topbar() {
 
     const toggleMode = () => {
         if (mode === 'personal') {
-            dispatch(authActions.setCorporateMode());
+            dispatch(setCorporateMode());
             navigate('/dashboard');
         } else {
-            dispatch(authActions.setPersonalMode());
+            dispatch(setPersonalMode());
             navigate('/dashboard/personal');
         }
     };
@@ -38,7 +38,7 @@ export default function Topbar() {
                 {/* Mode Toggle */}
                 <button
                     onClick={toggleMode}
-                    className={`px-3 py-2 rounded-xl font-semibold transition shadow-sm ${mode === 'personal'
+                    className={`px-6 py-3 rounded-xl font-semibold transition shadow-sm ${mode === 'personal'
                             ? 'bg-purple-100 text-purple-700 border border-purple-300'
                             : 'bg-indigo-100 text-indigo-700 border border-indigo-300'
                         }`}
@@ -55,7 +55,9 @@ export default function Topbar() {
                         {(user?.name || user?.username || user?.email)?.[0]?.toUpperCase() || 'U'}
                     </div>
                     <div>
-                        <p className="font-semibold text-gray-900">{user?.name || user?.username || user?.email || 'User'}</p>
+                        <p className="font-semibold text-gray-900">
+                            {user?.name || user?.username || user?.email?.split('@')[0] || 'User'}
+                        </p>
                         <p className="text-sm text-gray-500 capitalize">{user?.role || 'Member'}</p>
                     </div>
                 </div>

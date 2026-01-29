@@ -17,7 +17,7 @@ api.interceptors.request.use(
     (config) => {
         // Skip auth for login, signup, token refresh
         const url = (config.url || '').toString();
-        const skipAuth = url.includes('/token') || url.includes('/users/') || url.includes('/communities/');
+        const skipAuth = url.includes('/token') || url.includes('/users/') ;
 
         if (!skipAuth) {
             const token = localStorage.getItem('access_token');
@@ -37,23 +37,42 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;
-            const refresh = localStorage.getItem('refresh_token');
+        // ❌ If no response → network error → STOP
+        if (!error.response) {
+            return Promise.reject(error);
+        }
 
+        // ❌ If refresh endpoint itself fails → STOP
+        if (originalRequest.url.includes('/token/refresh/')) {
+            logoutUser();
+            return Promise.reject(error);
+        }
+
+        // ✅ Retry only ONCE
+        if (error.response.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+
+            const refresh = localStorage.getItem('refresh_token');
             if (!refresh) {
                 logoutUser();
                 return Promise.reject(error);
             }
 
             try {
-                const res = await axios.post(`${API_BASE_URL}/token/refresh/`, { refresh });
+                const res = await axios.post(
+                    `${API_BASE_URL}/token/refresh/`,
+                    { refresh }
+                );
+
                 localStorage.setItem('access_token', res.data.access);
-                originalRequest.headers['Authorization'] = `Bearer ${res.data.access}`;
+
+                originalRequest.headers.Authorization =
+                    `Bearer ${res.data.access}`;
+
                 return api(originalRequest);
-            } catch (refreshError) {
+            } catch (err) {
                 logoutUser();
-                return Promise.reject(refreshError);
+                return Promise.reject(err);
             }
         }
 
@@ -61,9 +80,10 @@ api.interceptors.response.use(
     }
 );
 
-function logoutUser() {
+function forceLogout() {
     localStorage.clear();
-    window.location.href = '/login';
+    window.location.replace('/login');
 }
+
 
 export default api;

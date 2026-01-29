@@ -1,23 +1,47 @@
+// src/store/authSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../api/api";
+import { fetchCommunities } from "./communitySlice";  // ← import this
 
+/* ------------------ LOGIN ------------------ */
 export const loginUser = createAsyncThunk(
     "auth/login",
-    async (credentials) => {
-        const res = await api.post("/token/", credentials);
-        return res.data;
+    async (credentials, { dispatch, rejectWithValue }) => {
+        try {
+            const res = await api.post("/token/", credentials);
+            const data = res.data;
+
+            // Save tokens
+            if (data.access) localStorage.setItem("access_token", data.access);
+            if (data.refresh) localStorage.setItem("refresh_token", data.refresh);
+
+            // Immediately fetch full user profile (includes communities)
+            const userRes = await api.get("/me/");
+            const fullUser = userRes.data;
+
+            // Also trigger communities fetch (important!)
+            dispatch(fetchCommunities());
+
+            return {
+                tokens: { access: data.access, refresh: data.refresh },
+                user: fullUser,
+            };
+        } catch (err) {
+            return rejectWithValue(err.response?.data || { detail: "Login failed" });
+        }
     }
 );
 
-// Provide a compatibility alias `login` because some components import { login }
-export const login = loginUser;
-
-/* ------------------ /me/ ------------------ */
+/* ------------------ FETCH CURRENT USER ------------------ */
 export const fetchCurrentUser = createAsyncThunk(
     "auth/me",
-    async () => {
-        const res = await api.get("/me/");
-        return res.data;
+    async (_, { rejectWithValue }) => {
+        try {
+            const res = await api.get("/me/");
+            return res.data;
+        } catch (err) {
+            return rejectWithValue(err.response?.data || "Failed to fetch user");
+        }
     }
 );
 
@@ -28,7 +52,9 @@ const authSlice = createSlice({
         user: null,
         isAuthenticated: false,
         loading: false,
-        mode: "personal",
+        error: null,
+        authReady: false,
+        mode: "corporate",
     },
 
     reducers: {
@@ -36,54 +62,62 @@ const authSlice = createSlice({
             state.tokens = null;
             state.user = null;
             state.isAuthenticated = false;
+            state.authReady = false;
+            state.mode = "corporate";
+            localStorage.clear();
+        },
+        setCorporateMode(state) {
+            state.mode = "corporate";
+            localStorage.setItem("app_mode", "corporate");
+        },
+        setPersonalMode(state) {
+            state.mode = "personal";
+            localStorage.setItem("app_mode", "personal");
         },
     },
 
     extraReducers: (builder) => {
         builder
-
-            /* ---------- LOGIN ---------- */
+            // LOGIN
             .addCase(loginUser.pending, (state) => {
                 state.loading = true;
+                state.error = null;
             })
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.loading = false;
-
-                // Support both response shapes: { tokens: {...}, user: {...} } or { access, refresh }
-                const tokens = action.payload.tokens || action.payload;
-
-                state.tokens = tokens;
-
-                // Normalize user object and ensure communities is always an array
-                const user = action.payload.user || null;
-                state.user = user
-                    ? { ...user, communities: user.communities || [] }
-                    : null;
-
-                state.isAuthenticated = !!state.user;
-
-                // Persist tokens to localStorage so other parts of the app (api interceptors, routing)
-                // can read them immediately after login
-                if (tokens?.access) localStorage.setItem('access_token', tokens.access);
-                if (tokens?.refresh) localStorage.setItem('refresh_token', tokens.refresh);
-
-                // Default mode decision
-                state.mode = (state.user?.communities?.length > 0) ? "community" : "personal";
-            })
-            .addCase(loginUser.rejected, (state) => {
-                state.loading = false;
-            })
-
-            /* ---------- /me/ ---------- */
-            .addCase(fetchCurrentUser.fulfilled, (state, action) => {
-                // 🔴 DO NOT OVERWRITE EXISTING USER
+                state.tokens = action.payload.tokens;
                 state.user = {
-                    ...state.user,
-                    ...action.payload,
+                    ...action.payload.user,
+                    communities: action.payload.user.communities || [],
                 };
+                state.isAuthenticated = true;
+                state.authReady = true;
+
+                const savedMode = localStorage.getItem("app_mode");
+                state.mode = savedMode || "corporate";
+            })
+            .addCase(loginUser.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload?.detail || "Login failed";
+            })
+
+            // FETCH USER
+            .addCase(fetchCurrentUser.fulfilled, (state, action) => {
+                state.user = {
+                    ...action.payload,
+                    communities: action.payload.communities || [],
+                };
+                state.isAuthenticated = true;
+                state.authReady = true;
+
+                const savedMode = localStorage.getItem("app_mode");
+                if (savedMode) state.mode = savedMode;
+            })
+            .addCase(fetchCurrentUser.rejected, (state) => {
+                state.authReady = true;
             });
     },
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, setCorporateMode, setPersonalMode } = authSlice.actions;
 export default authSlice.reducer;

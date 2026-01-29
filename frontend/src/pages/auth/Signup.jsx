@@ -45,19 +45,33 @@ export default function Signup() {
         }
     };
 
+    // In handleSignup – after creating user, login and wait
     const handleSignup = async () => {
         setLoading(true);
         setError('');
 
         try {
-            // 1. Create User
-            await api.post('/users/', {
+            // Prepare payload
+            const signupPayload = {
                 username: form.email,
                 email: form.email,
                 password: form.password,
                 name: form.name,
-                role: form.choice === 'create' ? 'Super Admin' : 'Member',
-            });
+            
+            };
+
+            if (form.choice === 'create' && form.organizationName) {
+                signupPayload.choice = 'create';
+                signupPayload.community_name = form.organizationName;
+            }
+
+            if (form.choice === 'join' && form.inviteCode) {
+                signupPayload.choice = 'join';
+                signupPayload.invite = form.inviteCode;  // ← send invite code to backend
+            }
+
+            // 1. Create user
+            await api.post('/users/', signupPayload);
 
             // 2. Login immediately
             const loginResult = await dispatch(
@@ -67,42 +81,18 @@ export default function Signup() {
                 })
             ).unwrap();
 
-            const accessToken = loginResult.access;
-            api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+            // 3. At this point → communities should be fetched (thanks to loginUser thunk)
+            // Wait a tiny bit to ensure state updated (optional)
+            await new Promise(resolve => setTimeout(resolve, 800));
 
-            // 3. If creating organization → create MAIN community
-            let mainCommunityId = null;
-
-            if (form.choice === 'create' && form.organizationName) {
-                const mongoId = generateMongoId(); // Auto-generate
-
-                const communityRes = await api.post('/communities/', {
-                    mongo_id: mongoId,
-                    name: form.organizationName, // Organization name = Main Community
-                    parent: null,
-                    members: [],
-                    member_count: 0,
-                });
-
-                mainCommunityId = communityRes.data.mongo_id;
-            }
-
-            // 4. Update user communities (add main community if created)
-            if (mainCommunityId) {
-                await api.patch('/me/', {
-                    communities: [mainCommunityId],
-                });
-            }
-
-            // 5. Navigate to dashboard
             navigate('/dashboard', {
-                state: { message: 'Welcome! Your account and main community are ready.' },
+                state: { message: 'Welcome! Your account is ready.' },
             });
 
         } catch (err) {
             setError(
                 err.response?.data?.detail ||
-                err.response?.data?.mongo_id?.[0] ||  // Specific mongo_id error
+                err.response?.data?.non_field_errors?.[0] ||
                 err.message ||
                 'Signup failed. Please try again.'
             );

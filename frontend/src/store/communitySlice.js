@@ -53,6 +53,9 @@ const communitySlice = createSlice({
             .addCase(fetchCommunities.fulfilled, (state, action) => {
                 state.loading = false;
                 state.communities = action.payload;
+                console.log('RAW COMMUNITIES FROM API:', action.payload);          // ← add this
+                console.log('Type of payload:', typeof action.payload);            // ← add this
+                console.log('First item keys (if exists):', action.payload[0] ? Object.keys(action.payload[0]) : 'empty array');
             })
             .addCase(fetchCommunities.rejected, (state, action) => {
                 state.loading = false;
