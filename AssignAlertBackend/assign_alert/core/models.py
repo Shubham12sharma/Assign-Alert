@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
-
+from django.contrib.auth import get_user_model
 
 
 
@@ -18,9 +18,8 @@ class User(AbstractUser):
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='Member')
 
-    # Store MongoDB ObjectIds as strings
-    communities = models.JSONField(default=list, blank=True)
 
+    main_community = models.CharField(max_length=24, blank=True, null=True)
 
    
 
@@ -28,18 +27,85 @@ class User(AbstractUser):
 
 
 # Community Model
+User = get_user_model()
+
 class Community(models.Model):
-    mongo_id = models.CharField(max_length=24, unique=True)  # Mongo ObjectId
-
     name = models.CharField(max_length=255)
-    parent = models.CharField(max_length=24, null=True, blank=True)
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sub_communities'
+    )
 
-    members = models.JSONField(default=list)
-    member_count = models.IntegerField(default=0)
+    # ManyToManyField is the correct & standard way for membership
+    members = models.ManyToManyField(
+        User,
+        related_name='communities',
+        blank=True
+    )
+
+    # Optional: track creation & last activity
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
 
+    @property
+    def member_count(self):
+        return self.members.count()
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = "Community"
+        verbose_name_plural = "Communities"
+
+
+class CommunityInvite(models.Model):
+    code = models.CharField(max_length=20, unique=True, db_index=True)
+    community = models.ForeignKey(
+        Community,
+        on_delete=models.CASCADE,
+        related_name='invites'
+    )
+    role = models.CharField(
+        max_length=20,
+        choices=[
+            ("Super Admin", "Super Admin"),
+            ("Admin", "Admin"),
+            ("Member", "Member"),
+            ("Guest", "Guest")
+        ],
+        default="Member"
+    )
+    email = models.EmailField(null=True, blank=True)
+    invited_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sent_invites'
+    )
+    is_used = models.BooleanField(default=False)
+    used_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='accepted_invites'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)  # Optional expiration
+
+    def __str__(self):
+        return f"{self.community.name} → {self.code} ({self.role})"
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Community Invite"
+        verbose_name_plural = "Community Invites"
 
 
 class Task(models.Model):

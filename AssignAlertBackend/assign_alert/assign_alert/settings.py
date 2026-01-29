@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
+from corsheaders.defaults import default_headers
 
 load_dotenv()
 
@@ -21,6 +22,8 @@ DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+FRONTEND_URL = "http://localhost:5173"
+
 # ────────────────────────────────────────────────────────────────────────────────
 # INSTALLED APPS
 # ────────────────────────────────────────────────────────────────────────────────
@@ -34,7 +37,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
@@ -150,13 +152,16 @@ SIMPLE_JWT = {
 # ────────────────────────────────────────────────────────────────────────────────
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
     "http://localhost:5173",
-    "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only for local dev – set False in prod!
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'cache-control',
+    'pragma',
+    'expires',
+]
 
 # ────────────────────────────────────────────────────────────────────────────────
 # OTHER SETTINGS
@@ -186,3 +191,12 @@ CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'eacc11158@gmail.com'          
+EMAIL_HOST_PASSWORD = 'yxckrubtgszfndkk'        
+DEFAULT_FROM_EMAIL = 'Assign Alert <eacc11158@gmail.com>'

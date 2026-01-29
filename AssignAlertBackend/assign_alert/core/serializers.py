@@ -1,75 +1,128 @@
 from rest_framework import serializers
 from .models import User, Community, Task, Epic, Sprint, Alert
 import bson
+import uuid
+from django.contrib.auth import get_user_model
+from django.db import transaction
+from .models import  CommunityInvite
 
 
 
+User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True)
+    password = serializers.CharField(write_only=True, required=True, min_length=8)
     id = serializers.CharField(source='pk', read_only=True)
     name = serializers.SerializerMethodField(read_only=True)
 
-    communities = serializers.ListField(
-        child=serializers.CharField(),
-        required=False,
-        default=list
+    # Signup-only helper fields (not saved to model)
+    choice = serializers.ChoiceField(
+        choices=['create', 'join'],
+        write_only=True,
+        required=False
     )
+    community_name = serializers.CharField(write_only=True, required=False)
+    community_id = serializers.CharField(write_only=True, required=False)
+    invite = serializers.CharField(write_only=True, required=False)  # ← for invite code
+
+    communities = serializers.StringRelatedField(many=True, read_only=True)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'name', 'password', 'role', 'communities']
+        fields = [
+            'id', 'username', 'email', 'name', 'password', 'role',
+            'communities', 'main_community',
+            'choice', 'community_name', 'community_id', 'invite',
+        ]
+        read_only_fields = ['role']  # ← important: prevent client from setting role
+
+    def get_name(self, obj):
+        return obj.get_full_name() or obj.username
+
+    def validate_role(self, value):
+        # Optional: if you allow role in payload, restrict it
+        if value and value not in ['Member', 'Guest']:
+            raise serializers.ValidationError("Only 'Member' or 'Guest' allowed on signup.")
+        return value
 
     def validate(self, data):
-        # Add this for better debugging
-        print("Validation data:", data)  # ← check terminal
+        choice = data.get('choice')
+        if choice == 'create' and not data.get('community_name'):
+            raise serializers.ValidationError({"community_name": "Required when choice='create'"})
+        if choice == 'join' and not data.get('community_id') and not data.get('invite'):
+            raise serializers.ValidationError({"community_id or invite": "Required when choice='join'"})
         return data
 
+    @transaction.atomic
     def create(self, validated_data):
-        print("Creating user with:", validated_data)  # ← add this
-        password = validated_data.pop('password', None)
+        # Pop helper fields
+        password = validated_data.pop('password')
+        choice = validated_data.pop('choice', None)
+        community_name = validated_data.pop('community_name', None)
+        community_id = validated_data.pop('community_id', None)
+        invite_code = validated_data.pop('invite', None)
+
+        # Prevent client from setting dangerous roles
+        validated_data['role'] = 'Member'  # default safe value
+
+        # Create user
         user = User(**validated_data)
-        if password:
-            user.set_password(password)
-        try:
-            user.save()
-        except Exception as e:
-            print("Save error:", str(e))  # ← see real database error
-            raise
+        user.set_password(password)
+        user.save()
+
+        # ── CREATE flow ───────────────────────────────────────
+        if choice == 'create' and community_name:
+            community = Community.objects.create(
+                name=community_name,
+                parent=None
+            )
+            community.members.add(user)
+            user.main_community = str(community.id)
+            user.save(update_fields=['main_community'])
+
+        # ── JOIN flow (via direct ID or invite code) ──────────
+        elif choice == 'join':
+            community = None
+
+            # Prefer invite code if provided
+            if invite_code:
+                try:
+                    invite = CommunityInvite.objects.get(
+                        code=invite_code,
+                        is_used=False
+                    )
+                    community = invite.community
+                    # Optional: set role from invite
+                    if invite.role:
+                        user.role = invite.role
+                    invite.is_used = True
+                    invite.used_by = user
+                    invite.save()
+                except CommunityInvite.DoesNotExist:
+                    raise serializers.ValidationError({"invite": "Invalid or already used invite code"})
+
+            # Fallback to direct community_id
+            elif community_id:
+                try:
+                    community = Community.objects.get(id=community_id)
+                except Community.DoesNotExist:
+                    raise serializers.ValidationError({"community_id": "Invalid community ID"})
+
+            if community:
+                community.members.add(user)
+                user.main_community = str(community.id)
+                user.save(update_fields=['main_community', 'role'])
+
         return user
 
-    def update(self, instance, validated_data):
-        password = validated_data.pop('password', None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        if password:
-            instance.set_password(password)
-        instance.save()
-        return instance
-
-    def get_name(self, instance):
-        full = f"{instance.first_name} {instance.last_name}".strip()
-        return full if full else instance.username
-
-
-
-
 class CommunitySerializer(serializers.ModelSerializer):
-    mongo_id = serializers.CharField(required=True)  # ← Allow writing (required for POST)
+    mongo_id = serializers.CharField(source='pk', read_only=True)
 
     class Meta:
         model = Community
-        fields = ['mongo_id', 'name', 'parent', 'members', 'member_count']
-        extra_kwargs = {
-            'mongo_id': {'write_only': False, 'read_only': False},  # Explicitly allow read & write
-        }
+        fields = ['mongo_id', 'name', 'parent', 'member_count']
 
-    def to_representation(self, instance):
-        ret = super().to_representation(instance)
-        # Safety: ensure mongo_id is always string in response
-        if 'mongo_id' in ret and ret['mongo_id']:
-            ret['mongo_id'] = str(ret['mongo_id'])
-        return ret
+   
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -137,4 +190,3 @@ class AlertSerializer(serializers.ModelSerializer):
                 ret[field] = str(ret[field])
 
         return ret
-

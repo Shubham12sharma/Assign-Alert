@@ -10,7 +10,7 @@ from .views import (
 )
 
 router = DefaultRouter()
-router.register(r'users', UserViewSet)
+router.register(r'users', UserViewSet, basename='user')
 router.register(r'communities', CommunityViewSet, basename='community')
 router.register(r'tasks', TaskViewSet, basename='task')
 router.register(r'epics', EpicViewSet)
@@ -27,4 +27,5 @@ urlpatterns = [
 
     # Current user
     path('me/', MeView.as_view(), name='me'),
+    
 ]
