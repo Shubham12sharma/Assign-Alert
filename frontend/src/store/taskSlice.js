@@ -1,32 +1,54 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../api/api';
 
-export const fetchTasks = createAsyncThunk('task/fetchTasks', async (_, { getState }) => {
-  const { auth } = getState();
-  const response = await api.get('/tasks/');
-  return response.data;
-});
-
-export const fetchPersonalTasks = createAsyncThunk('task/fetchPersonalTasks', async (_, { getState, rejectWithValue }) => {
-  try {
-    const response = await api.get('/tasks/?personal=true');
-    return response.data;
-  } catch (err) {
-    return rejectWithValue(err.response?.data || 'Failed to fetch personal tasks');
+// Fetch community tasks with filter
+export const fetchTasks = createAsyncThunk(
+  'task/fetchTasks',
+  async (communityId = null, { rejectWithValue }) => {
+    try {
+      let url = '/tasks/';
+      if (communityId && communityId !== 'all') {
+        url += `?community=${communityId}`;
+      }
+      const response = await api.get(url);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || 'Failed to fetch tasks');
+    }
   }
-});
+);
 
-export const createTask = createAsyncThunk('task/createTask', async (taskData) => {
-  const response = await api.post('/tasks/', taskData);
-  return response.data;
-});
+// Fetch personal tasks
+export const fetchPersonalTasks = createAsyncThunk(
+  'task/fetchPersonalTasks',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get('/tasks/?personal=true');
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || 'Failed to fetch personal tasks');
+    }
+  }
+);
+
+export const createTask = createAsyncThunk(
+  'task/createTask',
+  async (taskData, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/tasks/', taskData);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || 'Failed to create task');
+    }
+  }
+);
 
 export const updateTaskStatus = createAsyncThunk(
   'task/updateTaskStatus',
   async ({ taskId, status }, { rejectWithValue }) => {
     try {
       const response = await api.patch(`/tasks/${taskId}/`, { status });
-      return response.data; // return updated task
+      return response.data;
     } catch (err) {
       return rejectWithValue(err.response?.data || 'Failed to update task');
     }
@@ -54,42 +76,72 @@ const taskSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      // Fetch community tasks – MERGE, don't replace
       .addCase(fetchTasks.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchTasks.fulfilled, (state, action) => {
         state.loading = false;
-        state.tasks = action.payload;
+        const incoming = Array.isArray(action.payload) ? action.payload : [];
+        incoming.forEach((newTask) => {
+          const index = state.tasks.findIndex((t) => t.id === newTask.id);
+          if (index !== -1) {
+            state.tasks[index] = { ...state.tasks[index], ...newTask };
+          } else {
+            state.tasks.push(newTask);
+          }
+        });
       })
-      // Personal tasks
+      .addCase(fetchTasks.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+
+      // Fetch personal tasks – same merge logic
       .addCase(fetchPersonalTasks.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchPersonalTasks.fulfilled, (state, action) => {
         state.loading = false;
-        state.tasks = action.payload;
+        const incoming = Array.isArray(action.payload) ? action.payload : [];
+        incoming.forEach((newTask) => {
+          const index = state.tasks.findIndex((t) => t.id === newTask.id);
+          if (index !== -1) {
+            state.tasks[index] = { ...state.tasks[index], ...newTask };
+          } else {
+            state.tasks.push(newTask);
+          }
+        });
       })
       .addCase(fetchPersonalTasks.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })
+
+      // Create – add to front
       .addCase(createTask.fulfilled, (state, action) => {
         state.tasks.unshift(action.payload);
-      });
-      // add comment
-      builder.addCase(addCommentToTask.fulfilled, (state, action) => {
+      })
+
+      // Update status
+      .addCase(updateTaskStatus.fulfilled, (state, action) => {
+        const updated = action.payload;
+        const index = state.tasks.findIndex((t) => t.id === updated.id);
+        if (index !== -1) {
+          state.tasks[index] = { ...state.tasks[index], ...updated };
+        }
+      })
+
+      // Add comment
+      .addCase(addCommentToTask.fulfilled, (state, action) => {
         const { taskId, comment } = action.payload;
         const task = state.tasks.find((t) => t.id === taskId);
         if (task) {
           task.comments = task.comments || [];
           task.comments.push(comment);
         }
-      });
-      // update task
-      builder.addCase(updateTaskStatus.fulfilled, (state, action) => {
-        const updated = action.payload;
-        const idx = state.tasks.findIndex((t) => t.id === updated.id);
-        if (idx !== -1) state.tasks[idx] = updated;
       });
   },
 });

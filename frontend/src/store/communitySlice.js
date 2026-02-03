@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, createAction } from '@reduxjs/toolkit';
 import api from '../api/api';
 
 // Simple 24-character hex mongo_id generator (for frontend)
@@ -10,6 +10,9 @@ export const fetchCommunities = createAsyncThunk('community/fetchAll', async () 
     const response = await api.get('/communities/');
     return response.data;
 });
+export const setCommunityMembers = createAction('community/setCommunityMembers', (members) => ({
+    payload: members,
+}));
 
 export const createCommunity = createAsyncThunk('community/create', async (communityData, { rejectWithValue }) => {
     try {
@@ -56,6 +59,9 @@ const communitySlice = createSlice({
                 console.log('RAW COMMUNITIES FROM API:', action.payload);          // ← add this
                 console.log('Type of payload:', typeof action.payload);            // ← add this
                 console.log('First item keys (if exists):', action.payload[0] ? Object.keys(action.payload[0]) : 'empty array');
+            })
+            .addCase(setCommunityMembers, (state, action) => {
+                state.realUsers = action.payload;
             })
             .addCase(fetchCommunities.rejected, (state, action) => {
                 state.loading = false;

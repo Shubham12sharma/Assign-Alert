@@ -1,37 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createTask } from '../../store/taskSlice';
-import { addNotification } from '../../store/notificationSlice';
+import api from '../../api/api';
 
 const priorities = ['Low', 'Medium', 'High'];
 const levels = ['Easy', 'Medium', 'Hard'];
 
 const statuses = [
-    { id: 'backlog', label: 'Backlog' },
-    { id: 'todo', label: 'To Do' },
-    { id: 'inProgress', label: 'In Progress' },
-    { id: 'review', label: 'Review' },
-    { id: 'done', label: 'Done' },
-];
-const corporateCategories = [
-    'Bug', 'Feature', 'Research', 'Documentation', 'Design', 'Deployment'
-];
-const personalCategories = [
-    'Health', 'Family', 'Learning', 'Finance', 'Home', 'Shopping', 'Self-Improvement', 'Hobbies'
+    { id: 'To Do', label: 'To Do' },
+    { id: 'In Progress', label: 'In Progress' },
+    { id: 'Review', label: 'Review' },
+    { id: 'Done', label: 'Done' },
 ];
 
-// categories are chosen inside the component based on auth.mode
+const corporateCategories = ['Bug', 'Feature', 'Research', 'Documentation', 'Design', 'Deployment'];
+const personalCategories = ['Health', 'Family', 'Learning', 'Finance', 'Home', 'Shopping', 'Self-Improvement', 'Hobbies'];
 
 const categoryColors = {
-    // Corporate
     Bug: 'bg-red-100 text-red-800',
     Feature: 'bg-blue-100 text-blue-800',
     Research: 'bg-yellow-100 text-yellow-800',
     Documentation: 'bg-gray-100 text-gray-800',
     Design: 'bg-purple-100 text-purple-800',
     Deployment: 'bg-green-100 text-green-800',
-    // Personal
-    Health: 'bg-emerald-100 text-emerald-800',
+    Health: 'bg-emerald-100 text-emerald-100-800',
     Family: 'bg-pink-100 text-pink-800',
     Learning: 'bg-indigo-100 text-indigo-800',
     Finance: 'bg-amber-100 text-amber-800',
@@ -41,151 +33,215 @@ const categoryColors = {
     Hobbies: 'bg-lime-100 text-lime-800',
     default: 'bg-gray-100 text-gray-800',
 };
-// Mock users – replace with real data from API later
-const mockUsers = [
-    { id: '1', name: 'John Doe' },
-    { id: '2', name: 'Jane Smith' },
-    { id: '3', name: 'Alice Chen' },
-    { id: '4', name: 'Bob Wilson' },
-];
 
 export default function TaskModal({ isOpen, onClose, mode = 'create', initialData = null }) {
     const dispatch = useDispatch();
+
     const { epics = [] } = useSelector((state) => state.epic || {});
     const { sprints = [] } = useSelector((state) => state.sprint || {});
-    const { currentCommunity } = useSelector((state) => state.community || {});
 
-    const [loading, setLoading] = useState(false);
-    const [newTag, setNewTag] = useState('');
-    const [showUserSuggestions, setShowUserSuggestions] = useState(false);
-    const [userQuery, setUserQuery] = useState('');
+    // IMPORTANT: currentCommunity here is likely the ID string (from sidebar dispatch)
+    const currentCommunityId = useSelector((state) => state.community.currentCommunity);
+
+    const { mode: appMode } = useSelector((state) => state.auth || {});
+    const categories = appMode === 'personal' ? personalCategories : corporateCategories;
 
     const [form, setForm] = useState({
         title: '',
         description: '',
         priority: 'Medium',
-        taskLevel: 'Medium',
-        category: 'Feature',
-        status: 'todo',
+        task_level: 'Medium',
+        category: categories[0] || 'Feature',
+        status: 'To Do',
         assignee: '',
-        dueDate: '',
-        estimatedHours: '',
+        due_date: '',
+        estimated_hours: '',
         tags: [],
         sprintId: '',
         epicId: '',
-        communityId: '',
+        community: currentCommunityId || '',
     });
 
-    // Read app mode (personal/corporate) to choose categories dynamically
-    const { mode: appMode } = useSelector((state) => state.auth || {});
-    const categories = appMode === 'personal' ? personalCategories : corporateCategories;
+    const [loading, setLoading] = useState(false);
+    const [submitError, setSubmitError] = useState('');
+    const [newTag, setNewTag] = useState('');
+    const [showUserSuggestions, setShowUserSuggestions] = useState(false);
+    const [userQuery, setUserQuery] = useState('');
 
-    // Reset form when modal opens
+    const [realUsers, setRealUsers] = useState([]);
+    const [usersLoading, setUsersLoading] = useState(false);
+    const [usersError, setUsersError] = useState('');
+
+    // Fetch members when modal opens and we have a community ID
     useEffect(() => {
-        if (isOpen) {
-                setForm({
-                    title: '',
-                    description: '',
-                    priority: 'Medium',
-                    taskLevel: 'Medium',
-                    category: 'Feature',
-                    status: currentCommunity ? 'todo' : 'backlog',
-                    assignee: '',
-                    dueDate: '',
-                    estimatedHours: '',
-                    tags: [],
-                    sprintId: '',
-                    epicId: '',
-                    communityId: currentCommunity?.id || '',
-                });
-            setNewTag('');
+        if (!isOpen) return;
+
+        // Reset form
+        setForm({
+            title: '',
+            description: '',
+            priority: 'Medium',
+            task_level: 'Medium',
+            category: categories[0] || 'Feature',
+            status: currentCommunityId ? 'To Do' : 'backlog',
+            assignee: '',
+            due_date: '',
+            estimated_hours: '',
+            tags: [],
+            sprintId: '',
+            epicId: '',
+            community: currentCommunityId || '',
+        });
+
+        setNewTag('');
+        setSubmitError('');
+        setRealUsers([]);
+        setUsersError('');
+
+        if (!currentCommunityId) {
+            setUsersError("Select a community first to see team members");
+            return;
         }
-    }, [isOpen, currentCommunity]);
+
+        const fetchCommunityMembers = async () => {
+            setUsersLoading(true);
+            setUsersError('');
+            try {
+                console.log("[TaskModal] Fetching members for community ID:", currentCommunityId);
+                const res = await api.get(`/users/minimal/?community=${currentCommunityId}`);
+                console.log("[TaskModal] Members API response:", res.data);
+                console.log("[TaskModal] Received", res.data?.length || 0, "users");
+                dispatch(setCommunityMembers(members))
+                setRealUsers(res.data || []);
+            } catch (err) {
+                console.error("[TaskModal] Failed to load community members:", err);
+                setUsersError(err.response?.data?.detail || "Could not load team members");
+            } finally {
+                setUsersLoading(false);
+            }
+        };
+
+        fetchCommunityMembers();
+    }, [isOpen, currentCommunityId, categories]);
+
+    // ───────────────────────────────────────────────
+    // Rest of your handlers remain unchanged
+    // ───────────────────────────────────────────────
 
     const handleAddTag = (e) => {
         e.preventDefault();
         const trimmed = newTag.trim();
         if (!trimmed) return;
 
-        // If user typed @name and selected suggestion, it will already be in the correct form.
-        // If it starts with @ but wasn't selected, try to match a user by query
+        let tagValue = trimmed;
         if (trimmed.startsWith('@')) {
             const q = trimmed.slice(1).toLowerCase();
-            const matched = mockUsers.find(u => u.name.toLowerCase().includes(q));
-            const tagValue = matched ? `@${matched.name}` : trimmed;
-            if (!form.tags.includes(tagValue)) {
-                setForm({ ...form, tags: [...form.tags, tagValue] });
-            }
-        } else {
-            if (!form.tags.includes(trimmed)) {
-                setForm({ ...form, tags: [...form.tags, trimmed] });
-            }
+            const matched = realUsers.find(u => u.name?.toLowerCase().includes(q));
+            if (matched) tagValue = `@${matched.name}`;
         }
+
+        if (!form.tags.includes(tagValue)) {
+            setForm({ ...form, tags: [...form.tags, tagValue] });
+        }
+
         setNewTag('');
         setShowUserSuggestions(false);
         setUserQuery('');
     };
-    
+
     const handleRemoveTag = (tagToRemove) => {
-        setForm({ ...form, tags: form.tags.filter((t) => t !== tagToRemove) });
+        setForm({ ...form, tags: form.tags.filter(t => t !== tagToRemove) });
     };
 
     const handleAISuggest = () => {
-        // Future: Call LLM API
         setForm({
             ...form,
             priority: 'High',
+            task_level: 'Hard',
             category: 'Feature',
-            estimatedHours: '12',
+            estimated_hours: '12',
             tags: ['AI', 'urgent', 'backend', 'priority'],
         });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!form.title.trim() || !form.dueDate) return;
+        setSubmitError('');
+
+        if (!form.title.trim()) {
+            setSubmitError("Task title is required");
+            return;
+        }
+
+        if (!form.due_date) {
+            setSubmitError("Due date is required");
+            return;
+        }
+
+        const payload = {
+            title: form.title.trim(),
+            description: form.description.trim() || "",
+            priority: form.priority,
+            task_level: form.task_level,
+            category: form.category,
+            status: form.status,
+            assignee: form.assignee || null,
+            due_date: form.due_date,
+            estimated_hours: form.estimated_hours ? Number(form.estimated_hours) : null,
+            tags: form.tags,
+            attachments: [],
+            comments: [],
+            activity_logs: [],
+            community: form.community || null,
+            is_personal: appMode === 'personal',
+        };
+
+        console.log("Sending task payload:", JSON.stringify(payload, null, 2));
 
         setLoading(true);
+
         try {
-            const created = await dispatch(createTask(form)).unwrap();
-
-            // Dispatch notifications for any @-tagged users
-            (created.tags || []).forEach((tag) => {
-                if (typeof tag === 'string' && tag.startsWith('@')) {
-                    const username = tag.slice(1);
-                    dispatch(addNotification({
-                        type: 'mention',
-                        message: `Current User tagged you in task #${created.id}: "${created.title}"`,
-                        taskId: created.id,
-                        mentionedUser: username,
-                    }));
-                }
-            });
-
+            const created = await dispatch(createTask(payload)).unwrap();
+            console.log("Task created successfully:", created);
             onClose();
         } catch (err) {
-            console.error('Failed to create task:', err);
-            // Future: Show toast error
+            console.error("Create task error:", err);
+            const backendError = err?.response?.data;
+
+            if (backendError && typeof backendError === 'object') {
+                const messages = Object.entries(backendError)
+                    .map(([key, msgs]) => `${key}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+                    .join('\n');
+                setSubmitError(messages || "Validation failed");
+            } else {
+                setSubmitError(err.message || "Failed to create task");
+            }
         } finally {
             setLoading(false);
         }
     };
 
-    const filteredUsers = mockUsers.filter(u => u.name.toLowerCase().includes(userQuery.toLowerCase()));
+    const filteredUsers = realUsers.filter(u =>
+        (u.name || u.username || u.email || '').toLowerCase().includes(userQuery.toLowerCase())
+    );
 
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4 overflow-y-auto">
             <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl my-8 flex flex-col max-h-[90vh]">
-                {/* Header */}
                 <div className="px-8 py-6 border-b border-gray-200">
                     <h2 className="text-3xl font-bold text-gray-900">Create New Task</h2>
                     <p className="text-gray-600 mt-2">Fill in task details with optional AI assistance</p>
                 </div>
 
-                {/* Scrollable Form Body */}
                 <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-8 py-6 space-y-8">
+                    {submitError && (
+                        <div className="bg-red-50 text-red-700 px-6 py-4 rounded-xl text-center font-medium">
+                            {submitError}
+                        </div>
+                    )}
+
                     {/* Task Title */}
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -193,33 +249,31 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                         </label>
                         <input
                             type="text"
-                            required
                             value={form.title}
                             onChange={(e) => setForm({ ...form, title: e.target.value })}
-                            className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                            className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 transition"
                             placeholder="e.g. Implement AI priority suggestion"
+                            required
                         />
                     </div>
 
                     {/* Description */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Description (Markdown supported)
-                        </label>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
                         <textarea
                             rows={5}
                             value={form.description}
                             onChange={(e) => setForm({ ...form, description: e.target.value })}
                             className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 resize-none transition"
-                            placeholder="Detailed description of what needs to be done..."
+                            placeholder="Detailed description..."
                         />
                     </div>
 
-                    {/* Priority / Level / Category */}
+                    {/* Priority, Level, Category */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {[
                             { key: 'priority', label: 'Priority', options: priorities },
-                            { key: 'taskLevel', label: 'Task Level', options: levels },
+                            { key: 'task_level', label: 'Task Level', options: levels },
                             { key: 'category', label: 'Category', options: categories },
                         ].map(({ key, label, options }) => (
                             <div key={key}>
@@ -229,10 +283,8 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                                     onChange={(e) => setForm({ ...form, [key]: e.target.value })}
                                     className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 transition"
                                 >
-                                    {options.map((opt) => (
-                                        <option key={opt} value={opt}>
-                                            {opt}
-                                        </option>
+                                    {options.map(opt => (
+                                        <option key={opt} value={opt}>{opt}</option>
                                     ))}
                                 </select>
                             </div>
@@ -248,31 +300,11 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                                 onChange={(e) => setForm({ ...form, status: e.target.value })}
                                 className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 transition"
                             >
-                                {statuses.map((s) => (
-                                    <option key={s.id} value={s.id}>
-                                        {s.label}
-                                    </option>
+                                {statuses.map(s => (
+                                    <option key={s.id} value={s.id}>{s.label}</option>
                                 ))}
                             </select>
                         </div>
-                                
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Category
-                            </label>
-                            <select
-                                value={form.category}
-                                onChange={(e) => setForm({ ...form, category: e.target.value })}
-                                className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:ring-4 focus:ring-indigo-200 focus:border-indigo-600 transition"
-                            >
-                                {categories.map((cat) => (
-                                    <option key={cat} value={cat}>
-                                        {cat}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    
 
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -280,10 +312,10 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                             </label>
                             <input
                                 type="date"
-                                required
-                                value={form.dueDate}
-                                onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+                                value={form.due_date}
+                                onChange={(e) => setForm({ ...form, due_date: e.target.value })}
                                 className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 transition"
+                                required
                             />
                         </div>
                     </div>
@@ -292,39 +324,59 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Assignee</label>
-                            <select
-                                value={form.assignee}
-                                onChange={(e) => setForm({ ...form, assignee: e.target.value })}
-                                className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 transition"
-                            >
-                                <option value="">Unassigned</option>
-                                {mockUsers.map((user) => (
-                                    <option key={user.id} value={user.id}>
-                                        {user.name}
-                                    </option>
-                                ))}
-                            </select>
+
+                            {usersLoading ? (
+                                <p className="text-gray-500 animate-pulse">Loading team members...</p>
+                            ) : usersError ? (
+                                <p className="text-red-600 bg-red-50 p-3 rounded-lg">{usersError}</p>
+                            ) : !currentCommunityId ? (
+                                <p className="text-amber-700 bg-amber-50 p-4 rounded-xl">
+                                    No community selected yet
+                                </p>
+                            ) : realUsers.length === 0 ? (
+                                <p className="text-gray-500 bg-gray-50 p-3 rounded-lg">
+                                    This community has no members yet (or failed to load)
+                                </p>
+                            ) : (
+                                <select
+                                    value={form.assignee}
+                                    onChange={(e) => setForm({ ...form, assignee: e.target.value })}
+                                    className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 transition"
+                                >
+                                    <option value="">Unassigned</option>
+                                    {realUsers.map(user => (
+                                        <option key={user.id} value={user.id}>
+                                            { user.username || user.email}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
                         </div>
 
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Estimated Hours</label>
                             <input
                                 type="number"
-                                min="1"
+                                min="0.5"
                                 step="0.5"
-                                value={form.estimatedHours}
-                                onChange={(e) => setForm({ ...form, estimatedHours: e.target.value })}
+                                value={form.estimated_hours}
+                                onChange={(e) => setForm({ ...form, estimated_hours: e.target.value })}
                                 className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 transition"
                                 placeholder="e.g. 8"
                             />
                         </div>
                     </div>
 
+                    {/* ─────────────────────────────────────────────── */}
+                    {/* Tags, Sprint & Epic, AI Assistant, Actions – unchanged */}
+                    {/* You can keep them exactly as they were */}
+                    {/* ─────────────────────────────────────────────── */}
+
                     {/* Tags */}
                     <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Tags</label>
                         <div className="flex flex-wrap gap-2 mb-4">
-                            {form.tags.map((tag) => (
+                            {form.tags.map(tag => (
                                 <span
                                     key={tag}
                                     className="inline-flex items-center gap-2 bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full text-sm font-medium"
@@ -340,7 +392,7 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                                 </span>
                             ))}
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex gap-3 relative">
                             <input
                                 type="text"
                                 value={newTag}
@@ -357,11 +409,11 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                                 }}
                                 onKeyDown={(e) => e.key === 'Enter' && handleAddTag(e)}
                                 className="flex-1 px-5 py-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 transition"
-                                placeholder="Type tag and press Enter"
+                                placeholder="Type tag or @user and press Enter"
                             />
                             {showUserSuggestions && filteredUsers.length > 0 && (
                                 <div className="absolute mt-2 left-0 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-20 max-h-60 overflow-y-auto">
-                                    {filteredUsers.map((user) => (
+                                    {filteredUsers.map(user => (
                                         <button
                                             key={user.id}
                                             type="button"
@@ -377,9 +429,11 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                                             className="w-full text-left px-4 py-3 hover:bg-indigo-50 transition flex items-center gap-3"
                                         >
                                             <div className="w-8 h-8 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
-                                                {user.name[0]}
+                                                {user.name?.[0] || '?'}
                                             </div>
-                                            <span className="font-medium">{user.name}</span>
+                                            <span className="font-medium">
+                                                {user.name || user.username || user.email}
+                                            </span>
                                         </button>
                                     ))}
                                 </div>
@@ -394,40 +448,32 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                         </div>
                     </div>
 
-                    {/* Sprint & Epic Linking */}
+                    {/* Sprint & Epic */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Assign to Sprint
-                            </label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Assign to Sprint</label>
                             <select
                                 value={form.sprintId}
                                 onChange={(e) => setForm({ ...form, sprintId: e.target.value })}
                                 className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 transition"
                             >
                                 <option value="">No Sprint</option>
-                                {sprints.map((sprint) => (
-                                    <option key={sprint.id} value={sprint.id}>
-                                        {sprint.name}
-                                    </option>
+                                {sprints.map(s => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
                                 ))}
                             </select>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Link to Epic
-                            </label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Link to Epic</label>
                             <select
                                 value={form.epicId}
                                 onChange={(e) => setForm({ ...form, epicId: e.target.value })}
                                 className="w-full px-5 py-4 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 transition"
                             >
                                 <option value="">No Epic</option>
-                                {epics.map((epic) => (
-                                    <option key={epic.id} value={epic.id}>
-                                        {epic.title}
-                                    </option>
+                                {epics.map(e => (
+                                    <option key={e.id} value={e.id}>{e.title}</option>
                                 ))}
                             </select>
                         </div>
@@ -439,7 +485,7 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                             <div>
                                 <h3 className="text-2xl font-bold text-indigo-900">AI Task Assistant</h3>
                                 <p className="text-indigo-700 mt-2">
-                                    Let AI suggest priority, category, effort, and tags based on your description
+                                    Let AI suggest priority, category, effort, and tags
                                 </p>
                             </div>
                             <button
@@ -452,7 +498,7 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                         </div>
                     </div>
 
-                    {/* Form Actions */}
+                    {/* Actions */}
                     <div className="flex justify-end gap-4 pt-8 border-t border-gray-200">
                         <button
                             type="button"
@@ -466,7 +512,7 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                             disabled={loading}
                             className="px-10 py-4 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 font-semibold disabled:opacity-50 shadow-lg transition"
                         >
-                            {loading ? 'Creating Task...' : 'Create Task'}
+                            {loading ? 'Creating...' : 'Create Task'}
                         </button>
                     </div>
                 </form>
