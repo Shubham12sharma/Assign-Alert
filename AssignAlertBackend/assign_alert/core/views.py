@@ -16,10 +16,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 # Your local imports
-from .models import User, Community, Task, Epic, Sprint, Alert, CommunityInvite
+from .models import User, Community, Task, Epic, Sprint, Alert, CommunityInvite,Comment
 from .serializers import (
     UserSerializer, CommunitySerializer, TaskSerializer,
-    EpicSerializer, SprintSerializer, AlertSerializer
+    EpicSerializer, SprintSerializer, AlertSerializer, MinimalUserSerializer
 )
 
 
@@ -95,14 +95,58 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == 'create':
-            return [AllowAny()]
-        return [IsAuthenticated()]
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
+        """
+        Main queryset filtering:
+        - Super Admin → sees all users
+        - Normal users → only see themselves
+        """
         user = self.request.user
         if user.role == 'Super Admin':
             return User.objects.all()
         return User.objects.filter(pk=user.pk)
+
+    # ───────────────────────────────────────────────
+    # Custom action: minimal list for assignee dropdown
+    # ───────────────────────────────────────────────
+    @action(detail=False, methods=['get'], url_path='minimal')
+    def minimal(self, request):
+        community_id = request.query_params.get('community')
+        
+        print(f"[User minimal] Requested by {request.user} | community={community_id}")
+        
+        if not community_id:
+            print("[User minimal] No community ID provided")
+            return Response({"detail": "community parameter is required"}, status=400)
+
+        try:
+            community = Community.objects.get(id=community_id)
+            print(f"[User minimal] Community found: {community.name} ({community.id})")
+        except Community.DoesNotExist:
+            print(f"[User minimal] Community {community_id} not found")
+            return Response({"detail": "Community not found"}, status=404)
+
+        # Access control
+        if not (request.user.role == 'Super Admin' or community.members.filter(pk=request.user.pk).exists()):
+            print(f"[User minimal] Access denied for {request.user} in {community_id}")
+            return Response({"detail": "Not a member of this community"}, status=403)
+
+        queryset = User.objects.filter(communities__id=community_id)
+        print(f"[User minimal] Found {queryset.count()} members")
+
+        # Use serializer → it will handle ObjectId → str conversion
+        serializer = MinimalUserSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    # Optional: if you want to restrict who can see other users
+    def list(self, request, *args, **kwargs):
+        if request.user.role != 'Super Admin':
+            # Normal users can only see themselves (or community members if needed)
+            return Response(UserSerializer(request.user).data)
+        return super().list(request, *args, **kwargs)
 
 
 class CommunityViewSet(viewsets.ModelViewSet):
@@ -238,23 +282,88 @@ Assign Alert Team''',
 class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     lookup_field = 'pk'
     lookup_url_kwarg = 'pk'
 
+    def perform_create(self, serializer):
+        # Debug incoming data
+        print("Creating task - raw data:", self.request.data)
+
+        community_id = self.request.data.get('community')
+        if community_id:
+            try:
+                community_obj = Community.objects.get(id=community_id)
+                serializer.save(community=community_obj)
+            except Community.DoesNotExist:
+                raise serializers.ValidationError({"community": "Invalid community ID"})
+        else:
+            serializer.save()
+
+        print("Task created successfully:", serializer.instance)
+
     def get_queryset(self):
         user = self.request.user
+        
         if user.role in ['Super Admin', 'Admin']:
             return Task.objects.all()
+
+        # Get string IDs of communities the user is member of
+        user_community_ids = list(
+            user.communities.values_list('id', flat=True)
+        )
+        # Convert ObjectId → str if needed
+        user_community_ids = [str(cid) for cid in user_community_ids]
+
         return Task.objects.filter(
-            models.Q(community__members=user) |
+            models.Q(community__in=user_community_ids) |
             models.Q(is_personal=True, assignee=str(user.pk))
         )
-
+    
     def perform_create(self, serializer):
+        # Debug: see what is about to be saved
+        print("Creating task - validated data:", serializer.validated_data)
         serializer.save(assignee=str(self.request.user.pk))
 
+    @action(detail=True, methods=['post'], url_path='comments')
+    def comments(self, request, pk=None):
+        task = self.get_object()
+
+        # Optional: check permission (e.g. must be assignee or community member)
+        if not (request.user == task.assignee or task.community.members.filter(id=request.user.id).exists()):
+            return Response({"detail": "You do not have permission to comment on this task"}, status=403)
+
+        # Get comment text from request
+        text = request.data.get('text')
+        if not text or not text.strip():
+            return Response({"detail": "Comment text is required"}, status=400)
+
+        # Create comment (assuming you have a Comment model)
+        comment = Comment.objects.create(
+            task=task,
+            user=request.user,
+            text=text.strip(),
+            timestamp=timezone.now()
+        )
+
+        # Optional: update task's comments JSON field if you're using it
+        if hasattr(task, 'comments') and isinstance(task.comments, list):
+            task.comments.append({
+                'id': str(comment.id),
+                'user': request.user.username,
+                'text': text,
+                'timestamp': comment.timestamp.isoformat(),
+            })
+            task.save(update_fields=['comments'])
+
+        # Return the created comment
+        return Response({
+            'id': str(comment.id),
+            'user': request.user.username,
+            'text': comment.text,
+            'timestamp': comment.timestamp.isoformat(),
+        }, status=status.HTTP_201_CREATED)
 
 class EpicViewSet(viewsets.ModelViewSet):
     queryset = Epic.objects.all()

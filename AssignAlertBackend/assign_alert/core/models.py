@@ -110,31 +110,47 @@ class CommunityInvite(models.Model):
 
 class Task(models.Model):
     PRIORITY_CHOICES = [
-        ('High','High'),
-        ('Medium','Medium'),
-        ('Low','Low')
+        ('High', 'High'),
+        ('Medium', 'Medium'),
+        ('Low', 'Low')
     ]
 
     STATUS_CHOICES = [
-        ('To Do','To Do'),
-        ('In Progress','In Progress'),
-        ('Review','Review'),
-        ('Done','Done')
+        ('To Do', 'To Do'),
+        ('In Progress', 'In Progress'),
+        ('Review', 'Review'),
+        ('Done', 'Done')
     ]
 
     LEVEL_CHOICES = [
-        ('Easy','Easy'),
-        ('Medium','Medium'),
-        ('Hard','Hard')
+        ('Easy', 'Easy'),
+        ('Medium', 'Medium'),
+        ('Hard', 'Hard')
     ]
 
     title = models.CharField(max_length=255)
     description = models.TextField()
 
-    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES)
-    task_level = models.CharField(max_length=20, choices=LEVEL_CHOICES)
+    priority = models.CharField(
+    max_length=20,
+    choices=PRIORITY_CHOICES,
+    default='Medium'
+    )
+
+    task_level = models.CharField(
+        max_length=20,
+        choices=LEVEL_CHOICES,
+        default='Easy'
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='To Do'
+    )
+
     category = models.CharField(max_length=50)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+
 
     assignee = models.CharField(max_length=24, null=True, blank=True)
     due_date = models.DateTimeField(null=True, blank=True)
@@ -145,13 +161,55 @@ class Task(models.Model):
     comments = models.JSONField(default=list, blank=True)
     activity_logs = models.JSONField(default=list, blank=True)
 
-    community = models.CharField(max_length=24, null=True, blank=True)
+    # ✅ NEW FIELDS
+    sprint = models.ForeignKey(
+        'Sprint',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tasks'
+    )
+
+    epic = models.ForeignKey(
+        'Epic',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tasks'
+    )
+
+    community = models.ForeignKey(
+        Community,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tasks'
+    )
     is_personal = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(default=timezone.now)
 
 
+class Comment(models.Model):
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name='comment_sets'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='comments_made'
+    )
+    text = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['timestamp']
+
+    def __str__(self):
+        return f"Comment by {self.user} on {self.task}"
 
 
 # Epic Model

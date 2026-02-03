@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Community, Task, Epic, Sprint, Alert
+from .models import User, Community, Task, Epic, Sprint, Alert,Comment
 import bson
 import uuid
 from django.contrib.auth import get_user_model
@@ -126,19 +126,70 @@ class CommunitySerializer(serializers.ModelSerializer):
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    id = serializers.CharField(read_only=True, source='pk')  # Force ID as string
+    id = serializers.CharField(read_only=True, source='pk')
+
+    description = serializers.CharField(required=False, allow_blank=True)
+    category = serializers.CharField(required=False, allow_blank=True)
+
+    priority = serializers.ChoiceField(
+        choices=Task.PRIORITY_CHOICES,
+        required=False,
+        default='Medium'
+    )
+
+    task_level = serializers.ChoiceField(
+        choices=Task.LEVEL_CHOICES,
+        required=False,
+        default='Easy'
+    )
+
+    status = serializers.ChoiceField(
+        choices=Task.STATUS_CHOICES,
+        required=False,
+        default='To Do'
+    )
+
+    assignee = serializers.CharField(required=False, allow_null=True)
+    community = serializers.PrimaryKeyRelatedField(
+            queryset=Community.objects.all(),
+            required=False,
+            allow_null=True,
+            write_only=False,   # can be read + write
+        )
 
     class Meta:
         model = Task
-        fields = '__all__'
+        fields = "__all__"
+    
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        # Convert ObjectId → str for any remaining fields
+        for key in ['id', 'community', 'sprint', 'epic', 'assignee']:
+            if key in ret and ret[key] is not None:
+                ret[key] = str(ret[key])
+        return ret
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'user', 'text', 'timestamp']
+class MinimalUserSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(read_only=True)   
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email']
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        # Safety: convert any ObjectId fields to string
-        for field in ['id', 'assignee', 'community']:
-            if field in ret and ret[field]:
-                ret[field] = str(ret[field])
+        # Extra safety (though not needed after above change)
+        if 'id' in ret:
+            ret['id'] = str(ret['id'])
         return ret
+
 
 class EpicSerializer(serializers.ModelSerializer):
     id = serializers.CharField(read_only=True, source='pk')
