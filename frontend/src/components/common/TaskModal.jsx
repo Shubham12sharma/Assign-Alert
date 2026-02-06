@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { createTask } from '../../store/taskSlice';
+import { setCommunityMembers } from '../../store/communitySlice';
 import api from '../../api/api';
 
 const priorities = ['Low', 'Medium', 'High'];
@@ -111,8 +112,16 @@ export default function TaskModal({ isOpen, onClose, mode = 'create', initialDat
                 const res = await api.get(`/users/minimal/?community=${currentCommunityId}`);
                 console.log("[TaskModal] Members API response:", res.data);
                 console.log("[TaskModal] Received", res.data?.length || 0, "users");
-                dispatch(setCommunityMembers(members))
-                setRealUsers(res.data || []);
+                // Ensure each user has a `name` field for UI (fallback to username/email)
+                const members = (res.data || []).map(u => ({ ...u, name: u.name || u.username || u.email }));
+                // update global slice (optional) and local state
+                try {
+                    dispatch(setCommunityMembers(members)); 
+                } catch (e) {
+                    // ignore if dispatch not needed or fails
+                    console.warn('[TaskModal] dispatch setCommunityMembers failed', e);
+                }
+                setRealUsers(members);
             } catch (err) {
                 console.error("[TaskModal] Failed to load community members:", err);
                 setUsersError(err.response?.data?.detail || "Could not load team members");

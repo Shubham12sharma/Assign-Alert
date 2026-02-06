@@ -55,6 +55,30 @@ export const updateTaskStatus = createAsyncThunk(
   }
 );
 
+export const updateTask = createAsyncThunk(
+  'task/updateTask',
+  async ({ taskId, data }, { rejectWithValue }) => {
+    try {
+      const response = await api.patch(`/tasks/${taskId}/`, data);
+      return response.data;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || 'Failed to update task');
+    }
+  }
+);
+
+export const deleteTask = createAsyncThunk(
+  'task/deleteTask',
+  async (taskId, { rejectWithValue }) => {
+    try {
+      await api.delete(`/tasks/${taskId}/`);
+      return taskId;
+    } catch (err) {
+      return rejectWithValue(err.response?.data || 'Failed to delete task');
+    }
+  }
+);
+
 export const addCommentToTask = createAsyncThunk(
   'task/addCommentToTask',
   async ({ taskId, comment }, { rejectWithValue }) => {
@@ -132,6 +156,19 @@ const taskSlice = createSlice({
         if (index !== -1) {
           state.tasks[index] = { ...state.tasks[index], ...updated };
         }
+      })
+
+      .addCase(updateTask.fulfilled, (state, action) => {
+        const updated = action.payload;
+        const index = state.tasks.findIndex((t) => t.id === updated.id);
+        if (index !== -1) {
+          state.tasks[index] = { ...state.tasks[index], ...updated };
+        }
+      })
+
+      .addCase(deleteTask.fulfilled, (state, action) => {
+        const id = action.payload;
+        state.tasks = state.tasks.filter(t => t.id !== id);
       })
 
       // Add comment

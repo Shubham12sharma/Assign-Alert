@@ -42,6 +42,14 @@ const notificationSlice = createSlice({
             state.notifications.unshift(action.payload);
             if (!action.payload.read) state.unreadCount += 1;
         },
+        markNotificationRead: (state, action) => {
+            const id = action.payload;
+            const alert = state.notifications.find(n => n.id === id);
+            if (alert && !alert.read) {
+                alert.read = true;
+                state.unreadCount = Math.max(0, state.unreadCount - 1);
+            }
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -64,4 +72,5 @@ const notificationSlice = createSlice({
 });
 
 export const { addNotification } = notificationSlice.actions;
+export const { markNotificationRead } = notificationSlice.actions;
 export default notificationSlice.reducer;

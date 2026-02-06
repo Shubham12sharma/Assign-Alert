@@ -1,14 +1,28 @@
 import PageWrapper from '../../components/layout/PageWrapper';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { FiUsers, FiHome, FiSettings, FiShield } from 'react-icons/fi';
 import { useState } from 'react';
 import { FiPlus } from 'react-icons/fi';
 import InviteModal from '../../components/common/InviteModal';
+import { useEffect } from 'react';
+import { fetchPendingInvites } from '../../store/inviteSlice';
+import { fetchPersonalTasks } from '../../store/taskSlice';
 
 export default function AdminDashboard() {
+    const dispatch = useDispatch();
     const { user } = useSelector((state) => state.auth);
     const { currentCommunity } = useSelector((state) => state.community);
+    const { pendingInvites } = useSelector((state) => state.invites || {});
+    const { tasks } = useSelector((state) => state.task || {});
     const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+
+    useEffect(() => {
+        // Load only user-specific data
+        if (user) {
+            dispatch(fetchPersonalTasks());
+            dispatch(fetchPendingInvites());
+        }
+    }, [dispatch, user]);
 
     return (
         <PageWrapper>
@@ -51,7 +65,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                             <p className="text-sm text-gray-600">Total Users</p>
-                            <p className="text-3xl font-bold text-gray-900">156</p>
+                            <p className="text-3xl font-bold text-gray-900">{user ? 1 : 0}</p>
                         </div>
                     </div>
                 </div>
@@ -63,7 +77,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                             <p className="text-sm text-gray-600">Communities</p>
-                            <p className="text-3xl font-bold text-gray-900">8</p>
+                            <p className="text-3xl font-bold text-gray-900">{(user?.communities || []).length}</p>
                         </div>
                     </div>
                 </div>
@@ -77,7 +91,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                             <p className="text-sm text-gray-600">Active Tasks</p>
-                            <p className="text-3xl font-bold text-gray-900">342</p>
+                            <p className="text-3xl font-bold text-gray-900">{tasks ? tasks.filter(t => t.status !== 'Done' && (t.assignee === user?.id || t.assignee === user?.mongo_id)).length : 0}</p>
                         </div>
                     </div>
                 </div>
@@ -90,7 +104,7 @@ export default function AdminDashboard() {
                         </div>
                         <div>
                             <p className="text-sm text-gray-600">Pending Requests</p>
-                            <p className="text-3xl font-bold text-gray-900">12</p>
+                            <p className="text-3xl font-bold text-gray-900">{(pendingInvites || []).filter(inv => inv.email === user?.email || (user?.communities || []).includes(inv.community)).length}</p>
                         </div>
                     </div>
                 </div>

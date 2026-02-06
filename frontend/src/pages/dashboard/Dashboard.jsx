@@ -6,10 +6,12 @@ import PageWrapper from "../../components/layout/PageWrapper";
 
 export default function Dashboard() {
     const dispatch = useDispatch();
+    const { user, isAuthenticated, mode } = useSelector((state) => state.auth);
 
-    const { user, isAuthenticated, mode } = useSelector(
-        (state) => state.auth
-    );
+    useEffect(() => {
+        // Load tasks for dashboard (admins will get all tasks via 'all')
+        dispatch(fetchTasks('all'));
+    }, [dispatch]);
 
     /* ---------------------------
        1️⃣ AUTH GUARD
@@ -32,7 +34,7 @@ export default function Dashboard() {
        2️⃣ ROLE-BASED REDIRECT (TOP PRIORITY)
     ---------------------------- */
 
-    if (user.role === "Super Admin" || user.role === "Admin") {
+    if (user?.role === "Super Admin" || user?.role === "Admin") {
         // Admin area lives at /admin (see AppRoutes)
         return <Navigate to="/admin" replace />;
     }
@@ -45,13 +47,11 @@ export default function Dashboard() {
         return <Navigate to="/dashboard/personal" replace />;
     }
 
-    /* ---------------------------
-       4️⃣ FETCH TASKS (MEMBER)
-    ---------------------------- */
+     /* ---------------------------
+         4️⃣ FETCH TASKS (MEMBER)
+     ---------------------------- */
 
-    useEffect(() => {
-        dispatch(fetchTasks({ communityId: "all" }));
-    }, [dispatch]);
+     // already fetched at component mount above
 
     /* ---------------------------
        5️⃣ MEMBER DASHBOARD
@@ -65,6 +65,12 @@ export default function Dashboard() {
 ================================ */
 
 function MemberDashboard() {
+    const { tasks } = useSelector((state) => state.task);
+
+    const assigned = tasks.filter((t) => t.assignee).length;
+    const overdue = tasks.filter((t) => t.due_date && new Date(t.due_date) < new Date()).length;
+    const activeSprints = new Set(tasks.filter(t => t.sprint).map(t => t.sprint)).size;
+
     return (
         <PageWrapper>
             <h1 className="text-2xl font-bold mb-6">Personal Dashboard</h1>
@@ -72,26 +78,20 @@ function MemberDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-lg shadow-md">
                     <h3 className="text-lg font-semibold">Assigned Tasks</h3>
-                    <p className="text-3xl font-bold text-indigo-600">12</p>
-                    <p className="text-sm text-gray-500">3 overdue</p>
+                    <p className="text-3xl font-bold text-indigo-600">{assigned}</p>
+                    <p className="text-sm text-gray-500">{overdue} overdue</p>
                 </div>
 
                 <div className="bg-white p-6 rounded-lg shadow-md">
                     <h3 className="text-lg font-semibold">Active Sprints</h3>
-                    <p className="text-3xl font-bold text-indigo-600">2</p>
-                    <p className="text-sm text-gray-500">
-                        Weekly Sprint Progress: 65%
-                    </p>
+                    <p className="text-3xl font-bold text-indigo-600">{activeSprints}</p>
+                    <p className="text-sm text-gray-500">Weekly Sprint Progress: {/* TODO: compute real progress */}—</p>
                 </div>
 
                 <div className="bg-white p-6 rounded-lg shadow-md">
                     <h3 className="text-lg font-semibold">AI Insights</h3>
-                    <p className="text-sm">
-                        Workload Balanced | No Deadline Risks
-                    </p>
-                    <button className="mt-2 text-indigo-600 hover:underline">
-                        Generate Report
-                    </button>
+                    <p className="text-sm">Workload Balanced | No Deadline Risks</p>
+                    <button className="mt-2 text-indigo-600 hover:underline">Generate Report</button>
                 </div>
             </div>
         </PageWrapper>
