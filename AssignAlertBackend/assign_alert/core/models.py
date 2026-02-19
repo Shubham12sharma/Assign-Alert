@@ -11,9 +11,7 @@ from django.contrib.auth import get_user_model
 class User(AbstractUser):
     ROLE_CHOICES = (
         ('Super Admin', 'Super Admin'),
-        ('Admin', 'Admin'),
         ('Member', 'Member'),
-        ('Guest', 'Guest'),
     )
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='Member')
@@ -74,9 +72,7 @@ class CommunityInvite(models.Model):
         max_length=20,
         choices=[
             ("Super Admin", "Super Admin"),
-            ("Admin", "Admin"),
             ("Member", "Member"),
-            ("Guest", "Guest")
         ],
         default="Member"
     )
@@ -216,30 +212,43 @@ class Comment(models.Model):
 class Epic(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
-    status = models.CharField(max_length=20)
+    status = models.CharField(max_length=20, default='planned')
+
+    # Visual + reporting
+    color = models.CharField(max_length=20, default='indigo')
+    progress = models.FloatField(default=0)
 
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
 
+    # Stored as string ID of Community for now to keep migrations simple
     community = models.CharField(max_length=24, null=True, blank=True)
 
 
 
 # Sprint Model
 class Sprint(models.Model):
+    STATUS_CHOICES = [
+        ('planned', 'planned'),
+        ('active', 'active'),
+        ('completed', 'completed'),
+    ]
+
     TYPE_CHOICES = [
-        ('Weekly','Weekly'),
-        ('Monthly','Monthly')
+        ('weekly', 'weekly'),
+        ('monthly', 'monthly')
     ]
 
     name = models.CharField(max_length=255)
     goal = models.TextField()
 
-    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='monthly')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='planned')
 
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
 
+    # Stored as string IDs (matching Mongo-style usage elsewhere)
     epic = models.CharField(max_length=24, null=True, blank=True)
     community = models.CharField(max_length=24, null=True, blank=True)
 

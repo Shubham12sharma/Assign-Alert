@@ -200,3 +200,5 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'eacc11158@gmail.com'          
 EMAIL_HOST_PASSWORD = 'yxckrubtgszfndkk'        
 DEFAULT_FROM_EMAIL = 'Assign Alert <eacc11158@gmail.com>'
+
+

@@ -10,7 +10,7 @@ class IsSuperAdmin(BasePermission):
     message = "Only Super Admins are allowed to perform this action."
 
     def has_permission(self, request, view):
-        # User must be authenticated and have role 'Super Admin'
+        # User must be authenticated and have role 'Super Admin' only
         return (
             request.user.is_authenticated
             and hasattr(request.user, 'role')

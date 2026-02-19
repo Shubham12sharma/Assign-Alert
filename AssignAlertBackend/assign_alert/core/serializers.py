@@ -34,15 +34,20 @@ class UserSerializer(serializers.ModelSerializer):
             'communities', 'main_community',
             'choice', 'community_name', 'community_id', 'invite',
         ]
-        read_only_fields = ['role']  # ← important: prevent client from setting role
+        # Role is controlled with validation & view-level checks, not globally read-only
+        read_only_fields = []
 
     def get_name(self, obj):
         return obj.get_full_name() or obj.username
 
     def validate_role(self, value):
-        # Optional: if you allow role in payload, restrict it
-        if value and value not in ['Member', 'Guest']:
-            raise serializers.ValidationError("Only 'Member' or 'Guest' allowed on signup.")
+        """
+        Restrict role values to the two allowed roles.
+        This is only relevant on updates – on signup we always default to 'Member'
+        or upgrade the creator to 'Super Admin' in create().
+        """
+        if value and value not in ['Member', 'Super Admin']:
+            raise serializers.ValidationError("Only 'Super Admin' or 'Member' are valid roles.")
         return value
 
     def validate(self, data):
@@ -77,8 +82,10 @@ class UserSerializer(serializers.ModelSerializer):
                 parent=None
             )
             community.members.add(user)
+            # Creator should be super admin of the newly created community
+            user.role = 'Super Admin'
             user.main_community = str(community.id)
-            user.save(update_fields=['main_community'])
+            user.save(update_fields=['main_community', 'role'])
 
         # ── JOIN flow (via direct ID or invite code) ──────────
         elif choice == 'join':
@@ -181,7 +188,7 @@ class MinimalUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email']
+        fields = ['id', 'username', 'email', 'role']
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
@@ -199,12 +206,40 @@ class EpicSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def to_representation(self, instance):
+        """
+        Normalize field names for frontend:
+        - start_date  -> startDate
+        - end_date    -> targetDate
+        - community   -> communityId
+        - add sprintCount / completedSprints derived from Sprint model
+        """
+        from .models import Sprint  # local import to avoid circular
+
         ret = super().to_representation(instance)
 
-        # Convert possible ObjectId fields to string
-        for field in ['id', 'community']:
-            if field in ret and ret[field]:
-                ret[field] = str(ret[field])
+        # Basic ID-style conversions
+        if ret.get('id'):
+            ret['id'] = str(ret['id'])
+        if ret.get('community'):
+            ret['communityId'] = str(ret['community'])
+
+        # Date normalization
+        if instance.start_date:
+            ret['startDate'] = instance.start_date.date().isoformat()
+        if instance.end_date:
+            ret['targetDate'] = instance.end_date.date().isoformat()
+
+        # Derived sprint metrics
+        epic_id_str = str(instance.pk)
+        epic_sprints = Sprint.objects.filter(epic=epic_id_str)
+        sprint_count = epic_sprints.count()
+        completed_count = epic_sprints.filter(status='completed').count()
+
+        ret['sprintCount'] = sprint_count
+        ret['completedSprints'] = completed_count
+
+        # Simple list of sprint IDs linked to this epic
+        ret['sprintIds'] = [str(s.id) for s in epic_sprints]
 
         return ret
 
@@ -217,11 +252,25 @@ class SprintSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def to_representation(self, instance):
+        """
+        Normalize for frontend:
+        - start_date/end_date -> startDate/endDate
+        - epic/community -> epicId/communityId
+        """
         ret = super().to_representation(instance)
 
-        for field in ['id', 'epic', 'community']:
-            if field in ret and ret[field]:
-                ret[field] = str(ret[field])
+        if ret.get('id'):
+            ret['id'] = str(ret['id'])
+
+        if instance.start_date:
+            ret['startDate'] = instance.start_date.isoformat()
+        if instance.end_date:
+            ret['endDate'] = instance.end_date.isoformat()
+
+        if instance.epic:
+            ret['epicId'] = str(instance.epic)
+        if instance.community:
+            ret['communityId'] = str(instance.community)
 
         return ret
 
