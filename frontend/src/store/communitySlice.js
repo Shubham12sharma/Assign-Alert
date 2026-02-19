@@ -38,13 +38,23 @@ const communitySlice = createSlice({
     name: 'community',
     initialState: {
         communities: [],
-        currentCommunity: null,
+        // Store current community as its ID string and persist across refreshes
+        currentCommunity: typeof window !== 'undefined'
+            ? localStorage.getItem('current_community') || null
+            : null,
         loading: false,
         error: null,  // Added for error handling
     },
     reducers: {
         setCurrentCommunity: (state, action) => {
             state.currentCommunity = action.payload;
+            if (typeof window !== 'undefined') {
+                if (action.payload) {
+                    localStorage.setItem('current_community', action.payload);
+                } else {
+                    localStorage.removeItem('current_community');
+                }
+            }
         },
     },
     extraReducers: (builder) => {

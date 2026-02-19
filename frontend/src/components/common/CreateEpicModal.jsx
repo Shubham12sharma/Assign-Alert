@@ -19,8 +19,7 @@ const statusOptions = [
 
 export default function CreateEpicModal({ isOpen, onClose }) {
     const dispatch = useDispatch();
-    const { communities } = useSelector((state) => state.community);
-    const { currentCommunity } = useSelector((state) => state.community);
+    const { communities, currentCommunity } = useSelector((state) => state.community);
     const [loading, setLoading] = useState(false);
 
     const [form, setForm] = useState({
@@ -30,7 +29,7 @@ export default function CreateEpicModal({ isOpen, onClose }) {
         color: 'indigo',
         startDate: '',
         targetDate: '',
-        communityId: currentCommunity?.id || '',
+        communityId: currentCommunity || '',
     });
 
     // Flatten communities with indentation for hierarchy
@@ -53,8 +52,19 @@ export default function CreateEpicModal({ isOpen, onClose }) {
         e.preventDefault();
         if (!form.title || !form.startDate || !form.targetDate || !form.communityId) return;
 
+        const payload = {
+            title: form.title,
+            description: form.description,
+            status: form.status,
+            color: form.color,
+            // Backend expects DateTime; send at midnight UTC
+            start_date: `${form.startDate}T00:00:00Z`,
+            end_date: `${form.targetDate}T00:00:00Z`,
+            community: form.communityId,
+        };
+
         setLoading(true);
-        await dispatch(createEpic(form));
+        await dispatch(createEpic(payload));
         setLoading(false);
         onClose();
         setForm({
@@ -64,7 +74,7 @@ export default function CreateEpicModal({ isOpen, onClose }) {
             color: 'indigo',
             startDate: '',
             targetDate: '',
-            communityId: currentCommunity?.id || '',
+            communityId: currentCommunity || '',
         });
     };
 

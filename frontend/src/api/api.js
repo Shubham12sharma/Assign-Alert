@@ -17,7 +17,7 @@ api.interceptors.request.use(
     (config) => {
         // Skip auth for login, signup, token refresh
         const url = (config.url || '').toString();
-        const skipAuth = url.includes('/token') || url.includes('/users/') ;
+        const skipAuth = url.includes('/token') || (url.includes('/users/') && config.method === 'post');
 
         if (!skipAuth) {
             const token = localStorage.getItem('access_token');

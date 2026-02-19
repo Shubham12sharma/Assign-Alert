@@ -107,8 +107,7 @@ export default function InviteModal({ isOpen, onClose, communityId }) {
                                 className="w-full px-6 py-4 rounded-xl border border-gray-300 focus:ring-4 focus:ring-indigo-200 transition"
                             >
                                 <option value="Member">Member</option>
-                                <option value="Admin">Admin</option>
-                                <option value="Guest">Guest (Read-only)</option>
+                                <option value="Super Admin">Super Admin</option>
                             </select>
                         </div>
 

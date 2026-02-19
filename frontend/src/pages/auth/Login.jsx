@@ -37,7 +37,7 @@ export default function Login() {
     // 🔑 AUTO REDIRECT AFTER LOGIN
     useEffect(() => {
         if (isAuthenticated && user) {
-            if (user.role === "Super Admin" || user.role === "Admin") {
+            if (user.role === "Super Admin") {
                 navigate("/admin", { replace: true });
             } else {
                 navigate("/dashboard", { replace: true });

@@ -12,6 +12,10 @@ import SprintDetails from "../pages/sprints/SprintDetails";
 import AIInsights from "../pages/ai/AIInsights";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminDashboard from "../pages/admin/AdminDashboard";
+import ManageUsers from "../pages/admin/ManageUsers";
+import ManageCommunities from "../pages/admin/ManageCommunities";
+import CreateSubCommunity from "../pages/admin/CreateSubCommunity";
+import Settings from "../pages/Settings";
 import LandingPage from "../pages/LandingPage";
 
 export default function AppRoutes() {
@@ -33,8 +37,32 @@ export default function AppRoutes() {
                 <Route
                     path="/admin"
                     element={
-                        <ProtectedRoute requiredRole="Admin">
+                        <ProtectedRoute requiredRole="Super Admin">
                             <AdminDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin/users"
+                    element={
+                        <ProtectedRoute requiredRole="Super Admin">
+                            <ManageUsers />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin/communities"
+                    element={
+                        <ProtectedRoute requiredRole="Super Admin">
+                            <ManageCommunities />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/admin/communities/create"
+                    element={
+                        <ProtectedRoute requiredRole="Super Admin">
+                            <CreateSubCommunity />
                         </ProtectedRoute>
                     }
                 />
@@ -96,6 +124,15 @@ export default function AppRoutes() {
                     element={
                         <ProtectedRoute>
                             <AIInsights />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/settings"
+                    element={
+                        <ProtectedRoute>
+                            <Settings />
                         </ProtectedRoute>
                     }
                 />
