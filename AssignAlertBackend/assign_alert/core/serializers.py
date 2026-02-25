@@ -122,6 +122,24 @@ class UserSerializer(serializers.ModelSerializer):
 
         return user
 
+    def update(self, instance, validated_data):
+        """
+        Prevent client from attempting to modify immutable primary key fields.
+        MongoDB will raise if an update tries to change '_id'. Strip any id-like
+        keys that may be included by the frontend before delegating to the
+        default update implementation.
+        """
+        # Remove common id fields that should never be set by the client
+        for forbidden in ['id', 'pk', '_id', 'mongo_id', 'user_id']:
+            if forbidden in validated_data:
+                validated_data.pop(forbidden, None)
+
+        # Also remove nested 'pk' if frontend included a nested source mapping
+        # e.g. {'pk': '...'}
+        validated_data.pop('pk', None)
+
+        return super().update(instance, validated_data)
+
 class CommunitySerializer(serializers.ModelSerializer):
     mongo_id = serializers.CharField(source='pk', read_only=True)
 

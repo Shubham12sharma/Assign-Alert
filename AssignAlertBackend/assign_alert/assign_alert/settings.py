@@ -33,7 +33,6 @@ INSTALLED_APPS = [
     'core.mongo_configs.MongoAdminConfig',
     'core.mongo_configs.MongoAuthConfig',
     'core.mongo_configs.MongoContentTypesConfig',
-
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
@@ -142,10 +141,12 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': False,
     'AUTH_HEADER_TYPES': ('Bearer',),
-    # Very important when using ObjectId as pk
-    'USER_ID_FIELD': 'id',
+    # Use the model primary key name (pk) so simplejwt stores the correct id
+    # for custom User models backed by MongoDB ObjectId.
+    'USER_ID_FIELD': 'pk',
     'USER_ID_CLAIM': 'user_id',
 }
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # CORS (careful in production!)
