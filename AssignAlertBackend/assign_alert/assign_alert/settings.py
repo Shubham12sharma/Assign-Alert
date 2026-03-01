@@ -117,15 +117,21 @@ SIMPLE_JWT = {
 # CORS
 # ─────────────────────────────────────────────
 
+
+# Start empty
 CORS_ALLOWED_ORIGINS = []
 
+# Add frontend URL directly
+CORS_ALLOWED_ORIGINS.append("https://assignalert1.onrender.com")
+
+# Add more origins from environment variable (if any)
 cors_env = os.getenv("CORS_ALLOWED_ORIGINS")
 if cors_env:
-    CORS_ALLOWED_ORIGINS = [
+    CORS_ALLOWED_ORIGINS.extend([
         origin.strip()
         for origin in cors_env.split(",")
         if origin.strip()
-    ]
+    ])
 
 CORS_ALLOW_HEADERS = list(default_headers)
 
