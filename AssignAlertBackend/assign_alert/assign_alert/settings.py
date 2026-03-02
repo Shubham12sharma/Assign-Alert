@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     # Required Django apps
     "django.contrib.sessions",
     "django.contrib.messages",
-    "django.contrib.staticfiles",
+    "django.contrib.staticfiles",  # This should only appear once
 
     # Third-party apps
     "corsheaders",
@@ -49,8 +49,7 @@ INSTALLED_APPS = [
     "core",
 
     # Whitenoise for static files
-    "whitenoise.runserver_nostatic",  # Add this for development mode
-    "django.contrib.staticfiles",  # Django staticfiles app
+    "whitenoise.runserver_nostatic",  # This is for local development, if needed
 ]
 
 # ─────────────────────────────────────────────
