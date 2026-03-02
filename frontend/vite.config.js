@@ -1,19 +1,14 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: './',
+
   optimizeDeps: {
-    exclude: ['lightningcss'],
+    exclude: ["lightningcss"],
   },
-  server: {
-    proxy: {
-      '/api': {
-        target: process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000',
-        changeOrigin: true,
-        secure: false,
-      },
-    },
+
+  build: {
+    outDir: "dist",
   },
 });
