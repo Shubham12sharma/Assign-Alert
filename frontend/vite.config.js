@@ -1,22 +1,19 @@
-// vite.config.js
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
-
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  plugins: [react(),
-  tailwindcss(),
-  ],
-  base: './', // important for static deploy
+  plugins: [react()],
+  base: './',
+  optimizeDeps: {
+    exclude: ['lightningcss'],
+  },
   server: {
     proxy: {
-      "/api": {
-        target: process.env.REACT_APP_API_URL || "http://127.0.0.1:8000",
+      '/api': {
+        target: process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000',
         changeOrigin: true,
         secure: false,
-      }
-    }
+      },
+    },
   },
-  
-})
+});
