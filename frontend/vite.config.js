@@ -14,6 +14,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      '/me': {
+        target: process.env.REACT_APP_USER_API_URL ,
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 });

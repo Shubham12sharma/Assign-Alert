@@ -1,6 +1,18 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL ;
+// Environment variables for different API endpoints
+const API_BASE_URL = process.env.REACT_APP_API_URL;
+const USER_API_BASE_URL = process.env.REACT_APP_USER_API_URL ;
+
+// Helper function to determine the correct base URL
+const getBaseURL = (url) => {
+    // Use USER_API_BASE_URL for /me endpoint
+    if (url && url.includes('/me')) {
+        return USER_API_BASE_URL;
+    }
+    // Use API_BASE_URL for all other endpoints
+    return API_BASE_URL;
+};
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -9,13 +21,18 @@ const api = axios.create({
     },
 });
 
-// Add token to requests
+// Add token to requests and dynamically set baseURL
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('access_token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        
+        // Set the correct base URL based on the endpoint
+        const baseURL = getBaseURL(config.url);
+        config.baseURL = baseURL;
+        
         return config;
     },
     (error) => Promise.reject(error)
@@ -33,9 +50,10 @@ api.interceptors.response.use(
             try {
                 const token = localStorage.getItem('refresh_token');
                 if (token) {
-                    const response = await axios.post(`${API_BASE_URL}/token/refresh/`, {
-                        refresh: token,
-                    });
+                    const response = await axios.post(
+                        `${API_BASE_URL}/token/refresh/`,
+                        { refresh: token }
+                    );
 
                     const { access } = response.data;
                     localStorage.setItem('access_token', access);
