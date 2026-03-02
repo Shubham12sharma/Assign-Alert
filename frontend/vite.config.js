@@ -10,7 +10,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000',
+        target: process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000',
         changeOrigin: true,
         secure: false,
       },
