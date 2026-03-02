@@ -10,15 +10,12 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: process.env.REACT_APP_API_URL ,
+        target: process.env.VITE_API_URL || 'http://127.0.0.1:8000',
         changeOrigin: true,
         secure: false,
-      },
-      '/me': {
-        target: process.env.REACT_APP_USER_API_URL ,
-        changeOrigin: true,
-        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '/api'),
       },
     },
   },
 });
+     

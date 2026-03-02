@@ -16,7 +16,7 @@ export const loginUser = createAsyncThunk(
             if (data.refresh) localStorage.setItem("refresh_token", data.refresh);
 
             // Immediately fetch full user profile (includes communities)
-            const userRes = await api.get("/me/");
+            const userRes = await api.get("/api/me/");
             const fullUser = userRes.data;
 
             // Also trigger communities fetch (important!)
@@ -37,7 +37,7 @@ export const fetchCurrentUser = createAsyncThunk(
     "auth/me",
     async (_, { rejectWithValue }) => {
         try {
-            const res = await api.get("/me/");
+            const res = await api.get("/api/me/");
             return res.data;
         } catch (err) {
             return rejectWithValue(err.response?.data || "Failed to fetch user");
