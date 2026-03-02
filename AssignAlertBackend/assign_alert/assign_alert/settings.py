@@ -1,6 +1,6 @@
 """
 Django settings for assign_alert project.
-Production-ready MongoDB configuration for Render.
+MongoDB + Django Admin (Local Testing Ready)
 """
 
 import os
@@ -17,34 +17,33 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 # ─────────────────────────────────────────────
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-if not SECRET_KEY:
-    raise ValueError("SECRET_KEY is not set!")
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
 
-DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+DEBUG = True
 
-ALLOWED_HOSTS = os.getenv(
-    "ALLOWED_HOSTS",
-    "localhost,127.0.0.1"
-).split(",")
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 # ─────────────────────────────────────────────
-# APPLICATIONS
+# APPLICATIONS (ADMIN ENABLED)
 # ─────────────────────────────────────────────
 
 INSTALLED_APPS = [
+    # Mongo replacements (IMPORTANT)
     "core.mongo_configs.MongoAdminConfig",
     "core.mongo_configs.MongoAuthConfig",
     "core.mongo_configs.MongoContentTypesConfig",
 
+    # Required Django apps
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
+    # Third-party
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
 
+    # Local app
     "core",
 ]
 
@@ -55,7 +54,6 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -65,16 +63,36 @@ MIDDLEWARE = [
 ]
 
 # ─────────────────────────────────────────────
-# DATABASE - MongoDB Atlas
+# TEMPLATES (REQUIRED FOR ADMIN)
+# ─────────────────────────────────────────────
+
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ],
+        },
+    },
+]
+
+# ─────────────────────────────────────────────
+# DATABASE - LOCAL MONGO
 # ─────────────────────────────────────────────
 
 DATABASES = {
     "default": {
         "ENGINE": "django_mongodb_backend",
-        "NAME": os.getenv("MONGO_DB_NAME"),
+        "NAME": "assign_alert",
         "CLIENT": {
-            "host": os.getenv("MONGO_URI"),
-        }
+            "host": os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017/"),
+        },
     }
 }
 
@@ -91,48 +109,40 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # ─────────────────────────────────────────────
-# REST FRAMEWORK & JWT
+# REST FRAMEWORK
 # ─────────────────────────────────────────────
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    "DEFAULT_RENDERER_CLASSES": (
-        "rest_framework.renderers.JSONRenderer",
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.AllowAny",
     ),
 }
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=2),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    "ROTATE_REFRESH_TOKENS": True,
-    "BLACKLIST_AFTER_ROTATION": False,
-    "AUTH_HEADER_TYPES": ("Bearer",),
-    "USER_ID_FIELD": "pk",
-    "USER_ID_CLAIM": "user_id",
 }
 
 # ─────────────────────────────────────────────
 # CORS
 # ─────────────────────────────────────────────
 
+# Allowed origins for CORS requests
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "https://assign-alert1.onrender.com",  # Production frontend
+]
 
-# Start empty
-CORS_ALLOWED_ORIGINS = []
+# Allow credentials (cookies, authorization headers)
+CORS_ALLOW_CREDENTIALS = True
 
-# Add frontend URL directly
-CORS_ALLOWED_ORIGINS.append("https://assignalert1.onrender.com")
-
-# Add more origins from environment variable (if any)
-cors_env = os.getenv("CORS_ALLOWED_ORIGINS")
-if cors_env:
-    CORS_ALLOWED_ORIGINS.extend([
-        origin.strip()
-        for origin in cors_env.split(",")
-        if origin.strip()
-    ])
-
+# Custom headers allowed
 CORS_ALLOW_HEADERS = list(default_headers)
 
 # ─────────────────────────────────────────────
@@ -140,7 +150,7 @@ CORS_ALLOW_HEADERS = list(default_headers)
 # ─────────────────────────────────────────────
 
 STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # ─────────────────────────────────────────────
 # CORE DJANGO
@@ -153,33 +163,3 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
-
-# ─────────────────────────────────────────────
-# PASSWORD VALIDATORS
-# ─────────────────────────────────────────────
-
-AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
-]
-
-# ─────────────────────────────────────────────
-# EMAIL (Use ENV Variables!)
-# ─────────────────────────────────────────────
-
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
-
-# ─────────────────────────────────────────────
-# CELERY (optional)
-# ─────────────────────────────────────────────
-
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
