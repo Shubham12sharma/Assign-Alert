@@ -92,15 +92,32 @@ TEMPLATES = [
 # DATABASE - MongoDB Atlas (for Render)
 # ─────────────────────────────────────────────
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django_mongodb_backend",
-        "NAME": os.getenv("MONGO_DB_NAME", "assign_alert"),
-        "CLIENT": {
-            "host": os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017/"),
-        },
+
+if os.getenv("RENDER") == "true":
+    # Production: PostgreSQL on Render
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("DB_NAME"),
+            "USER": os.getenv("DB_USER"),
+            "PASSWORD": os.getenv("DB_PASS"),
+            "HOST": os.getenv("DB_HOST"),
+            "PORT": os.getenv("DB_PORT", 5432),
+        }
     }
-}
+    DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+else:
+    # Development: MongoDB
+    DATABASES = {
+        "default": {
+            "ENGINE": "django_mongodb_backend",
+            "NAME": os.getenv("MONGO_DB_NAME", "assign_alert"),
+            "CLIENT": {
+                "host": os.getenv("MONGO_URI", "mongodb://127.0.0.1:27017/"),
+            },
+        }
+    }
+
 
 DEFAULT_AUTO_FIELD = "django_mongodb_backend.fields.ObjectIdAutoField"
 
@@ -154,7 +171,7 @@ CORS_ALLOW_CREDENTIALS = True
 # Custom headers allowed
 
 CORS_ALLOW_HEADERS = list(default_headers) + ["authorization"]
-CORS_ALLOW_HEADERS = list(default_headers)
+
 
 # ─────────────────────────────────────────────
 # STATIC FILES
