@@ -122,6 +122,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    # Set default permission to AllowAny so endpoints without auth can be called
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.AllowAny",
     ),
@@ -132,23 +133,27 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
 }
 
+
 # ─────────────────────────────────────────────
 # CORS
 # ─────────────────────────────────────────────
 
 # Allowed origins for CORS requests
 CORS_ALLOWED_ORIGINS = [
+    "https://assign-alert1.onrender.com",  # Production frontend
     "http://localhost:3000",
     "http://localhost:5173",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
-    "https://assign-alert1.onrender.com",  # Production frontend
+    
 ]
 
 # Allow credentials (cookies, authorization headers)
 CORS_ALLOW_CREDENTIALS = True
 
 # Custom headers allowed
+
+CORS_ALLOW_HEADERS = list(default_headers) + ["authorization"]
 CORS_ALLOW_HEADERS = list(default_headers)
 
 # ─────────────────────────────────────────────
