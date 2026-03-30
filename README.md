@@ -1,51 +1,86 @@
-# Project Overview
+# Project Title
 
-Assign-Alert is a robust tool designed to help users manage and stay updated on project assignments efficiently. It streamlines the process of assignment tracking and enhances collaboration among team members.
-
-# Features
-- Assign and track multiple projects effectively.
-- Get notifications for upcoming deadlines.
-- User-friendly interface for easy navigation.
-- Real-time updates and collaboration.
-
-# Installation Instructions
-1. Clone the repository:
+## Django Backend Setup and Installation Instructions
+1. **Clone the repository**:
    ```bash
    git clone https://github.com/Shubham12sharma/Assign-Alert.git
-   ```
-2. Navigate into the project directory:
-   ```bash
    cd Assign-Alert
    ```
-3. Install the required dependencies:
+
+2. **Create a virtual environment**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   ```
+
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Run migrations**:
+   ```bash
+   python manage.py migrate
+   ```
+
+5. **Start the development server**:
+   ```bash
+   python manage.py runserver
+   ```
+
+## Frontend Setup
+- Ensure Node.js is installed on your machine.
+- Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+- Install the frontend dependencies:
    ```bash
    npm install
    ```
+- Start the frontend server:
+   ```bash
+   npm start
+   ```
 
-# Project Structure
+## Project Structure
 ```
 Assign-Alert/
-│
-├── src/              # Source files
-│   ├── components/   # Components of the app
-│   ├── styles/       # Styles and CSS files
-│   └── index.js      # Entry point of the application
-│
-├── public/          # Public files
-├── README.md        # Project documentation
-└── package.json      # Project metadata
+├── backend/
+│   ├── manage.py
+│   ├── app/
+│   ├── requirements.txt
+│   └── ...
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   └── package.json
+└── README.md
 ```
 
-# Tech Stack
-- Frontend: React.js
-- Backend: Node.js, Express.js
-- Database: MongoDB
-- Styling: CSS, Bootstrap
+## Tech Stack
+- Backend: Django
+- Frontend: React
+- Database: PostgreSQL
 
-# Usage
-- Start the application:
-  ```bash
-  npm start
-  ```
-- Open your browser and visit `http://localhost:3000` to view the application.
-- Follow the on-screen instructions to use the features of Assign-Alert.
+## Troubleshooting Guide
+- If you encounter any issues:
+  - Ensure all dependencies are installed correctly.
+  - Check if you have the correct version of Python and Node.js.
+  - Look into the logs for any specific error messages to address.
+
+## Contributing Guidelines
+1. Fork the repository.
+2. Create a new branch for your feature:
+   ```bash
+   git checkout -b feature-name
+   ```
+3. Make your changes and commit them:
+   ```bash
+   git commit -m 'Add some feature'
+   ```
+4. Push to the branch:
+   ```bash
+   git push origin feature-name
+   ```
+5. Open a pull request.
